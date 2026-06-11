@@ -44,7 +44,7 @@
                 <span class="w-2.5 h-2.5 bg-teal-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.6)]" id="connection-status"></span>
                 <span class="text-xs font-semibold text-teal-300 uppercase tracking-wider" id="connection-text">Live Sync</span>
             </div>
-            <div class="text-xs font-medium text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-full border border-white/5">Base ID: CMD-Alpha</div>
+            <div class="text-xs font-medium text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-full border border-white/5">Base ID: RescueGrid</div>
         </div>
     </nav>
 
@@ -136,19 +136,19 @@
         const sharedRingGeo = new THREE.RingGeometry(1.5, 1.8, 16); 
 
         const materials = {
-            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
-            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b }),
-            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf }),
-            NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.55 }),
-            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, fog: false }),
+            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, fog: false }),
+            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, fog: false }),
+            NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.55, fog: false }),
+            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false })
         };
 
-        const ringMaterials = {
-            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }),
-            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }),
-            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }),
-            NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }),
-            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3 })
+const ringMaterials = {
+            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
+            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
+            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
+            NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, side: THREE.DoubleSide, transparent: true, opacity: 0.2, fog: false }),
+            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false })
         };
 
         const lineMaterials = {
@@ -564,7 +564,7 @@
             Object.values(activeRescuers).forEach(r => {
                 r.mesh.position.x += (r.target.x - r.mesh.position.x) * 0.08;
                 r.mesh.position.z += (r.target.z - r.mesh.position.z) * 0.08;
-                r.mesh.position.y = 0;
+                r.mesh.position.y = 6;
             });
 
             renderer.render(scene, camera);
