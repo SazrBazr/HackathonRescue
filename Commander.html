@@ -27,7 +27,10 @@
         }
     </script>
 </head>
+
 <body class="text-slate-200 min-h-screen flex flex-col font-sans overflow-x-hidden antialiased">
+<div class="hidden bg-rose-500/10 text-rose-400 border-rose-500/20 bg-amber-500/10 text-amber-400 border-amber-500/20 bg-slate-500/10 text-slate-400 border-slate-500/20 bg-teal-500/10 text-teal-400 border-teal-500/20 bg-rose-500/80 bg-rose-400 bg-amber-500/80 bg-amber-400 bg-slate-500/80 bg-slate-400 bg-teal-500/80 bg-teal-400"></div>
+
 
     <nav class="bg-slate-900/50 backdrop-blur-md border-b border-white/5 p-4 flex justify-between items-center z-10 sticky top-0 shadow-lg">
         <div class="flex items-center space-x-3">
@@ -201,20 +204,23 @@
             return spr;
         }
 
+        const sharedCanvas = document.createElement('canvas');
+        sharedCanvas.width = 128; sharedCanvas.height = 128;
+        const sharedCtx = sharedCanvas.getContext('2d');
+
         function setSpriteNumber(sprite, text) {
-            if (sprite.userData.text === text) return;   // unchanged
-            const c = document.createElement('canvas');
-            c.width = 128; c.height = 128;
-            const ctx = c.getContext('2d');
-            ctx.fillStyle = 'rgba(15,23,42,0.85)';
-            ctx.beginPath(); ctx.arc(64, 64, 52, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 6; ctx.stroke();
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 72px sans-serif';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(text, 64, 68);
-            sprite.material.map.dispose();
-            sprite.material.map = new THREE.CanvasTexture(c);
+            if (sprite.userData.text === text) return;
+            sharedCtx.clearRect(0, 0, 128, 128);
+            sharedCtx.fillStyle = 'rgba(15,23,42,0.85)';
+            sharedCtx.beginPath(); sharedCtx.arc(64, 64, 52, 0, Math.PI * 2); sharedCtx.fill();
+            sharedCtx.strokeStyle = '#e2e8f0'; sharedCtx.lineWidth = 4; sharedCtx.stroke();
+            sharedCtx.fillStyle = '#ffffff';
+            sharedCtx.font = 'bold 32px sans-serif';
+            sharedCtx.textAlign = 'center'; sharedCtx.textBaseline = 'middle';
+            sharedCtx.fillText(text, 64, 68);
+
+            if(sprite.material.map) sprite.material.map.dispose();
+            sprite.material.map = new THREE.CanvasTexture(sharedCanvas);
             sprite.material.needsUpdate = true;
             sprite.userData.text = text;
         }
@@ -307,7 +313,7 @@
         function createDOMCard(victim, index) {
             const color = getTailwindColorForStatus(victim.triage_status);
             const shortId = victim.victim_id.split('-')[0].toUpperCase();
-            const rank = index + 1; 
+            const rank = index + 1;
 
             // Show a "no signal" notice (only when the backend reports it).
             let noSignalBanner = '';
@@ -320,16 +326,20 @@
                         SIGNAL LOST — last seen ${secs} (showing last known position)
                     </div>`;
             }
-            
+
             return `
                 <div class="bg-slate-700/20 hover:bg-slate-700/40 transition-all duration-300 border border-white/5 rounded-xl p-4 relative overflow-hidden group shadow-lg backdrop-blur-sm ${victim.triage_status === 'NO_SIGNAL' ? 'opacity-60' : ''}" id="card-${victim.victim_id}">
                     <div class="absolute top-0 left-0 w-1.5 h-full bg-${color}-500/80 rounded-l-xl transition-all group-hover:bg-${color}-400"></div>
                     <div class="flex justify-between items-center mb-4 pl-3">
                         <div class="flex items-center gap-3">
-                            <span class="bg-slate-900/60 text-slate-300 h-6 w-6 flex items-center justify-center rounded-full text-[10px] font-bold border border-white/5 shadow-inner">${rank}</span>
+                            <span class="bg-slate-900/60 text-slate-300 h-6 px-2 flex items-center justify-center rounded-full text-[11px] font-bold border border-white/5 shadow-inner">#${rank}</span>
                             <div>
                                 <div class="text-[10px] text-slate-400 tracking-wider mb-0.5 uppercase">UWB Signal</div>
-                                <div class="font-medium text-slate-200 text-sm">${shortId}</div>
+                                <div class="font-medium text-slate-200 text-sm flex items-center gap-2">
+                                    ${shortId}
+                                    <span class="text-rose-400 text-[11px] font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">${victim.metrics.current_bpm}♥</span>
+                                    <span class="text-sky-400 text-[11px] font-bold bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">${victim.metrics.current_spo2}% O₂</span>
+                                </div>
                             </div>
                         </div>
                         <span class="text-[10px] font-semibold bg-${color}-500/10 text-${color}-400 px-2.5 py-1 rounded-full uppercase tracking-wider border border-${color}-500/20">${victim.triage_status}</span>
@@ -353,27 +363,36 @@
                 </div>
             `;
         }
+        // dropdown + button for the commander to assign a rescuer to this victim.
 
-        // Assignment row: shows who's assigned (and whether confirmed), or a
         // dropdown + button for the commander to assign a rescuer to this victim.
         function buildAssignRow(victim) {
-            if (victim.triage_status === 'NO_SIGNAL') return '';
+            let statusBadge = '';
             const a = victim.assigned_to;
+
+            // Show the status if assigned, but do NOT hide the button below it
             if (a) {
-                const badge = a.confirmed
-                    ? `<span class="text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i>${a.rescuer_id} confirmed</span>`
-                    : `<span class="text-amber-400"><i class="fa-solid fa-hourglass-half mr-1"></i>${a.rescuer_id} assigned (awaiting confirm)</span>`;
-                return `<div class="mt-3 ml-3 text-[11px] font-medium bg-slate-900/40 border border-white/5 rounded-lg px-2.5 py-1.5">${badge}
-                    <button onclick="assignVictim('${victim.victim_id}', document.getElementById('sel-${victim.victim_id}')?.value)" class="hidden"></button></div>`;
+                statusBadge = a.confirmed
+                    ? `<span class="text-emerald-400 block mb-2 text-[11px]"><i class="fa-solid fa-circle-check mr-1"></i>${a.rescuer_id} confirmed</span>`
+                    : `<span class="text-amber-400 block mb-2 text-[11px]"><i class="fa-solid fa-hourglass-half mr-1"></i>${a.rescuer_id} assigned (awaiting confirm)</span>`;
             }
+
             const opts = LATEST_RESCUERS.map(r => `<option value="${r.rescuer_id}">${r.rescuer_id}</option>`).join('');
-            return `<div class="mt-3 ml-3 flex items-center gap-2">
-                <select id="sel-${victim.victim_id}" class="bg-slate-900/60 text-slate-200 text-[11px] rounded-lg px-2 py-1.5 border border-white/10 flex-1">${opts}</select>
-                <button onclick="assignVictim('${victim.victim_id}', document.getElementById('sel-${victim.victim_id}').value)"
-                    class="text-[11px] font-semibold bg-sky-600/80 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg transition-all">Assign</button>
+
+            return `<div class="mt-3 ml-3 p-2 bg-slate-900/80 border border-sky-500/30 rounded-lg">
+                ${statusBadge}
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-sky-400 uppercase font-bold tracking-wider">Dispatch</span>
+                    <select id="sel-${victim.victim_id}" class="bg-slate-950 text-slate-200 text-[11px] rounded px-2 py-1.5 border border-white/10 flex-1">${opts}</select>
+                    <button onclick="assignVictim('${victim.victim_id}', document.getElementById('sel-${victim.victim_id}').value)"
+                        class="text-[11px] font-bold bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded transition-all shadow-[0_0_12px_rgba(2,132,199,0.6)]">
+                        SEND UNIT
+                    </button>
+                </div>
             </div>`;
         }
 
+        
         let LATEST_RESCUERS = [];
         async function assignVictim(victimId, rescuerId) {
             if (!rescuerId) return;
@@ -411,7 +430,7 @@
 
         // Backend API endpoint (the live triage server). Change the host here
         // if the backend runs on another machine on the LAN.
-        const API_URL = 'http://127.0.0.1:8000/state';
+        const API_URL = 'http://localhost:8000/state';
 
         // Core Data Fetching
         async function fetchLiveUWBData() {
@@ -424,7 +443,10 @@
                 document.getElementById('connection-status').classList.replace('bg-rose-500', 'bg-teal-400');
                 document.getElementById('connection-text').innerText = 'Live Sync';
                 document.getElementById('connection-text').classList.replace('text-rose-400', 'text-teal-300');
-                
+
+                // --- Fill rescuer list FIRST so assign dropdowns have options ---
+                LATEST_RESCUERS = data.rescuers || [];
+
                 // --- 1. Process Victims Array ---
                 document.getElementById('trapped-count').innerText = `${data.victims.length} FOUND`;
                 let victimHtml = '';
@@ -439,8 +461,9 @@
                     const vy = depthToY(victim.metrics.calculated_depth_meters);
                     const vz = mapXY(victim.location.y_coord);
                     const status = victim.triage_status;
-                    const rankText = String(index + 1);   // priority order from backend
-                    
+                    const rankText = String(index + 1);
+
+
                     if (!activeVictims[vId]) {
                         activeVictims[vId] = create3DTarget(status, vx, vy, vz, rankText);
                     } else {
@@ -456,7 +479,7 @@
                         }
                     }
                 });
-                document.getElementById('trapped-list').innerHTML = victimHtml;
+                document.getElementById('trapped-list').innerHTML = victimHtml || '<div class="text-slate-500 text-sm flex items-center justify-center col-span-full h-full font-light">No signals found. Waiting for targets...</div>';
 
                 Object.keys(activeVictims).forEach(vId => {
                     if (!seenVictimIds.has(vId)) {
@@ -475,9 +498,6 @@
 
                 // Build the debris terrain once we have the heightmap.
                 if (data.terrain) buildTerrain(data.terrain);
-
-                // --- Fill rescuer list FIRST so assign dropdowns have options ---
-                LATEST_RESCUERS = data.rescuers || [];
 
                 // --- 2. Process Rescuers Array ---
                 document.getElementById('rescuer-count').innerText = `${data.rescuers.length} DEPLOYED`;
@@ -534,7 +554,7 @@
                 t.mesh.position.z += (t.target.z - t.mesh.position.z) * 0.08;
                 // Ease Y toward target, then add a subtle bob on top.
                 const baseY = t.mesh.position.y + (t.target.y - t.mesh.position.y) * 0.08;
-                t.mesh.position.y = baseY + Math.sin(time + t.pulseTime) * 0.15;
+                t.mesh.position.y = baseY;
                 // Keep the drop-line reaching the ground (local space).
                 const pos = t.line.geometry.getAttribute('position');
                 pos.setY(0, -t.mesh.position.y);
@@ -544,7 +564,7 @@
             Object.values(activeRescuers).forEach(r => {
                 r.mesh.position.x += (r.target.x - r.mesh.position.x) * 0.08;
                 r.mesh.position.z += (r.target.z - r.mesh.position.z) * 0.08;
-                r.mesh.position.y = Math.sin(time * 1.5 + r.pulseTime) * 0.1;
+                r.mesh.position.y = 0;
             });
 
             renderer.render(scene, camera);
