@@ -316,8 +316,9 @@
     </div>
 
     <script>
-        // Data block parsed directly into application memory
-        const jsonData = {
+        // Initial fallback data (used only until the first live fetch lands,
+        // so the UI never starts empty). Replaced by live API data on load.
+        let jsonData = {
             "victims": [
                 {
                     "victim_id": "7a8b9c2d-4e5f",
@@ -520,9 +521,45 @@
             changeTargetVictim();
         }
 
+        // --- LIVE DATA SYNC ---
+        // Pull the same backend state the commander dashboard uses. Refreshes
+        // jsonData in place; rebuilds the victim dropdown only when the set of
+        // victims changes, so the operator's current navigation isn't disturbed.
+        const API_URL = 'http://127.0.0.1:8000/state';
+
+        async function syncLiveData() {
+            try {
+                const res = await fetch(API_URL + '?t=' + new Date().getTime());
+                if (!res.ok) throw new Error('bad response');
+                const data = await res.json();
+                if (!data.victims || data.victims.length === 0) return;
+
+                const oldIds = jsonData.victims.map(v => v.victim_id).join(',');
+                const newIds = data.victims.map(v => v.victim_id).join(',');
+
+                jsonData = data;
+
+                // Keep the operator pointed at a valid victim.
+                if (activeVictimIndex >= jsonData.victims.length) {
+                    activeVictimIndex = 0;
+                }
+                // Only rebuild the dropdown if the victim list actually changed,
+                // to avoid resetting the operator's selection every 5s.
+                if (oldIds !== newIds) {
+                    initDropdown();
+                    dropdown.value = activeVictimIndex;
+                }
+            } catch (e) {
+                // Stay on last known data if the backend is briefly unreachable.
+                console.error('Live sync failed (using last known data):', e);
+            }
+        }
+
         window.onload = () => {
             initDropdown();
             changeTargetVictim();
+            syncLiveData();                 // first live pull
+            setInterval(syncLiveData, 5000); // keep refreshing
         };
     </script>
 </body>
