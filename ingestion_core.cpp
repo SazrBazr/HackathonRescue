@@ -8,33 +8,23 @@
 #include <thread>
 #include <curl/curl.h>
 #include "lib/json.hpp"
-#include "localization.h"   // <-- the real math now lives in the pipeline
+#include "localization.h"   // the real multilateration math
 
 using json = nlohmann::json;
 
 #define UDP_PORT 5005
-#define BUFFER_SIZE 8192    // bigger: each victim now carries 6 anchor distances
+#define BUFFER_SIZE 16384   // bigger: many victims, each with 6 anchor distances
 
-// ---------------------------------------------------------------------------
-//  Turn ONE incoming victim (vitals + a list of anchor distances) into an
-//  outgoing victim (vitals + a COMPUTED x,y,z position).
-//
-//  This is the C++ node's real job. It reads the distances each beacon/drone
-//  measured, runs multilateration via localize(), and produces a position
-//  nobody typed by hand.
-// ---------------------------------------------------------------------------
+// Turn ONE incoming victim (vitals + anchor distances) into an outgoing victim
+// with a COMPUTED (x,y,z) position. This is the C++ node's real job.
 json process_victim(const json& v) {
     std::vector<Anchor> anchors;
     for (const auto& a : v.at("anchors")) {
         anchors.push_back(Anchor{
-            a.at("x").get<double>(),
-            a.at("y").get<double>(),
-            a.at("z").get<double>(),
-            a.at("range").get<double>(),
-            a.at("is_master").get<bool>()
+            a.at("x").get<double>(), a.at("y").get<double>(), a.at("z").get<double>(),
+            a.at("range").get<double>(), a.at("is_master").get<bool>()
         });
     }
-
     Position p = localize(anchors);
 
     json out;
@@ -43,14 +33,12 @@ json process_victim(const json& v) {
     out["spo2"]       = v.at("spo2");
     out["hemorrhage"] = v.at("hemorrhage");
     out["solved"]     = p.solved;
-    // Round to 2 decimals so the JSON stays tidy.
     out["x"] = std::round(p.x * 100.0) / 100.0;
     out["y"] = std::round(p.y * 100.0) / 100.0;
     out["z"] = std::round(p.z * 100.0) / 100.0;
     return out;
 }
 
-// ---- HTTP bridge to the Python triage API (unchanged) ----
 void send_to_python(const std::string& json_payload) {
     CURL* curl = curl_easy_init();
     if (curl) {
@@ -73,10 +61,8 @@ int main() {
     char buffer[BUFFER_SIZE];
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        std::cerr << "Socket creation failed!" << std::endl;
-        return -1;
+        std::cerr << "Socket creation failed!" << std::endl; return -1;
     }
-
     memset(&server_addr, 0, sizeof(server_addr));
     memset(&client_addr, 0, sizeof(client_addr));
     server_addr.sin_family = AF_INET;
@@ -84,8 +70,7 @@ int main() {
     server_addr.sin_port = htons(UDP_PORT);
 
     if (bind(sockfd, (const struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        std::cerr << "Bind failed! Is port 5005 already in use?" << std::endl;
-        return -1;
+        std::cerr << "Bind failed! Is port 5005 already in use?" << std::endl; return -1;
     }
 
     curl_global_init(CURL_GLOBAL_ALL);
@@ -103,14 +88,14 @@ int main() {
             json outgoing;
             outgoing["victims"]  = json::array();
             outgoing["rescuers"] = incoming.value("rescuers", json::array());
+            outgoing["beacons"]  = incoming.value("beacons", json::array());  // pass beacons through
 
             for (const auto& v : incoming["victims"]) {
                 json solved = process_victim(v);
                 std::cout << "[LOCATED] " << solved["victim_id"].get<std::string>()
                           << "  ->  (" << solved["x"] << ", " << solved["y"]
                           << ", " << solved["z"] << ")"
-                          << (solved["solved"].get<bool>() ? "" : "  [UNSOLVED]")
-                          << std::endl;
+                          << (solved["solved"].get<bool>() ? "" : "  [UNSOLVED]") << std::endl;
                 outgoing["victims"].push_back(solved);
             }
 
@@ -121,7 +106,6 @@ int main() {
             std::cerr << "JSON error: " << e.what() << std::endl;
         }
     }
-
     close(sockfd);
     curl_global_cleanup();
     return 0;

@@ -151,9 +151,24 @@
             RESCUER: new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 })
         };
 
+        // Brown markers for the fixed ground beacons.
+        const beaconGeo = new THREE.BoxGeometry(2.2, 4, 2.2);
+        const beaconMat = new THREE.MeshBasicMaterial({ color: 0xb45309 });
+        const beaconMasterMat = new THREE.MeshBasicMaterial({ color: 0x92400e });
+
+        // --- COORDINATE MAPPING ---
+        // The field is a 100m x 100m site. We center it on the grid (which spans
+        // -50..50) so victims spread across the whole map instead of bunching in
+        // one corner. Depth is exaggerated a little so buried victims read clearly.
+        const SITE = 100;
+        const DEPTH_VIS = 2.2;            // visual exaggeration of depth only
+        function mapXY(coord) { return coord - SITE / 2; }   // 0..100 -> -50..50
+        function depthToY(depthMeters) { return -depthMeters * DEPTH_VIS; }
+
         // --- 3. DATA MANAGEMENT ---
         const activeVictims = {}; 
         const activeRescuers = {};
+        const activeBeacons = {};
 
         function getTailwindColorForStatus(status) {
             if(status === 'CRITICAL') return 'rose'; 
@@ -162,16 +177,52 @@
             return 'teal'; 
         }
 
-        // Factory function for 3D units using shared memory
-        function create3DTarget(status, x, y, z) {
+        // Build a floating number badge (priority rank) as a sprite.
+        function makeNumberSprite(text) {
+            const c = document.createElement('canvas');
+            c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = 'rgba(15,23,42,0.85)';
+            ctx.beginPath(); ctx.arc(64, 64, 52, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 6; ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 72px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(text, 64, 68);
+            const tex = new THREE.CanvasTexture(c);
+            const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+            spr.scale.set(3.5, 3.5, 1);
+            spr.userData.text = text;
+            return spr;
+        }
+
+        function setSpriteNumber(sprite, text) {
+            if (sprite.userData.text === text) return;   // unchanged
+            const c = document.createElement('canvas');
+            c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = 'rgba(15,23,42,0.85)';
+            ctx.beginPath(); ctx.arc(64, 64, 52, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 6; ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 72px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(text, 64, 68);
+            sprite.material.map.dispose();
+            sprite.material.map = new THREE.CanvasTexture(c);
+            sprite.material.needsUpdate = true;
+            sprite.userData.text = text;
+        }
+
+        // Factory for victim/rescuer markers. Stores a glide TARGET so the
+        // animation loop can move smoothly instead of teleporting each poll.
+        function create3DTarget(status, x, y, z, rankText) {
             const mesh = new THREE.Mesh(sharedSphereGeo, materials[status]);
             mesh.position.set(x, y, z);
-            
-            // Drop line (Created once, updated via position attributes later)
+
             const lineGeo = new THREE.BufferGeometry();
             const positions = new Float32Array([0, -y, 0, 0, 0, 0]);
             lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            
             const line = new THREE.Line(lineGeo, lineMaterials[status]);
             mesh.add(line);
 
@@ -183,8 +234,25 @@
                 mesh.add(ring);
             }
 
+            let label = null;
+            if (rankText != null) {
+                label = makeNumberSprite(rankText);
+                label.position.set(0, 3, 0);   // hover above the sphere
+                mesh.add(label);
+            }
+
             scene.add(mesh);
-            return { mesh, line, ring, pulseTime: Math.random() * 100 };
+            return { mesh, line, ring, label,
+                     target: new THREE.Vector3(x, y, z),
+                     pulseTime: Math.random() * 100 };
+        }
+
+        // Draw a fixed brown beacon (created once, never moves).
+        function createBeacon(x, isMaster) {
+            const m = new THREE.Mesh(beaconGeo, isMaster ? beaconMasterMat : beaconMat);
+            m.position.set(x.sx, 2, x.sz);
+            scene.add(m);
+            return { mesh: m };
         }
 
         // DOM Card Builders
@@ -285,37 +353,41 @@
                     seenVictimIds.add(vId);
                     victimHtml += createDOMCard(victim, index);
 
-                    const vx = victim.location.x_coord / 10;
-                    const vy = -(victim.metrics.calculated_depth_meters);
-                    const vz = victim.location.y_coord / 10;
+                    const vx = mapXY(victim.location.x_coord);
+                    const vy = depthToY(victim.metrics.calculated_depth_meters);
+                    const vz = mapXY(victim.location.y_coord);
                     const status = victim.triage_status;
+                    const rankText = String(index + 1);   // priority order from backend
                     
                     if (!activeVictims[vId]) {
-                        activeVictims[vId] = create3DTarget(status, vx, vy, vz);
+                        activeVictims[vId] = create3DTarget(status, vx, vy, vz, rankText);
                     } else {
-                        // Interpolate position
-                        activeVictims[vId].mesh.position.lerp(new THREE.Vector3(vx, vy, vz), 0.1);
-                        
-                        // Apply cached materials
+                        // Set a glide TARGET; the animation loop moves there smoothly.
+                        activeVictims[vId].target.set(vx, vy, vz);
                         activeVictims[vId].mesh.material = materials[status];
                         activeVictims[vId].line.material = lineMaterials[status];
                         if (activeVictims[vId].ring) {
                             activeVictims[vId].ring.material = ringMaterials[status];
                         }
-                        
-                        // Mutate line geometry instead of re-instantiating
-                        const posAttribute = activeVictims[vId].line.geometry.getAttribute('position');
-                        posAttribute.setY(0, -vy);
-                        posAttribute.needsUpdate = true;
+                        if (activeVictims[vId].label) {
+                            setSpriteNumber(activeVictims[vId].label, rankText);
+                        }
                     }
                 });
                 document.getElementById('trapped-list').innerHTML = victimHtml;
 
-                // Remove 3D objects for victims no longer in the feed (prevents leaks)
                 Object.keys(activeVictims).forEach(vId => {
                     if (!seenVictimIds.has(vId)) {
                         scene.remove(activeVictims[vId].mesh);
                         delete activeVictims[vId];
+                    }
+                });
+
+                // --- 1b. Draw the fixed ground beacons (brown) once ---
+                (data.beacons || []).forEach(b => {
+                    if (!activeBeacons[b.beacon_id]) {
+                        activeBeacons[b.beacon_id] = createBeacon(
+                            { sx: mapXY(b.x), sz: mapXY(b.y) }, b.is_master);
                     }
                 });
 
@@ -329,19 +401,18 @@
                     seenRescuerIds.add(rId);
                     rescuerHtml += createRescuerCard(rescuer);
 
-                    const rx = rescuer.x / 10;
+                    const rx = mapXY(rescuer.x);
                     const ry = 0; 
-                    const rz = rescuer.y / 10;
+                    const rz = mapXY(rescuer.y);
 
                     if (!activeRescuers[rId]) {
-                        activeRescuers[rId] = create3DTarget('RESCUER', rx, ry, rz);
+                        activeRescuers[rId] = create3DTarget('RESCUER', rx, ry, rz, null);
                     } else {
-                        activeRescuers[rId].mesh.position.lerp(new THREE.Vector3(rx, ry, rz), 0.1);
+                        activeRescuers[rId].target.set(rx, ry, rz);
                     }
                 });
                 document.getElementById('rescuer-list').innerHTML = rescuerHtml;
 
-                // Remove 3D objects for rescuers no longer in the feed
                 Object.keys(activeRescuers).forEach(rId => {
                     if (!seenRescuerIds.has(rId)) {
                         scene.remove(activeRescuers[rId].mesh);
@@ -357,24 +428,35 @@
             }
         }
 
-        setInterval(fetchLiveUWBData, 5000);
+        setInterval(fetchLiveUWBData, 10000);   // refresh priority + positions every 10s
         fetchLiveUWBData(); 
 
         // --- 4. ANIMATION LOOP ---
+        // Glide each marker toward its target every frame (smooth, no jumping),
+        // with a gentle bob and a drop-line kept anchored to the ground.
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
 
             const time = Date.now() * 0.002; 
-            
+
             Object.values(activeVictims).forEach(t => {
-                const baseHeight = t.mesh.position.y;
-                t.mesh.position.y = baseHeight + (Math.sin(time + t.pulseTime) * 0.03); 
+                // Ease X/Z toward the latest target.
+                t.mesh.position.x += (t.target.x - t.mesh.position.x) * 0.08;
+                t.mesh.position.z += (t.target.z - t.mesh.position.z) * 0.08;
+                // Ease Y toward target, then add a subtle bob on top.
+                const baseY = t.mesh.position.y + (t.target.y - t.mesh.position.y) * 0.08;
+                t.mesh.position.y = baseY + Math.sin(time + t.pulseTime) * 0.15;
+                // Keep the drop-line reaching the ground (local space).
+                const pos = t.line.geometry.getAttribute('position');
+                pos.setY(0, -t.mesh.position.y);
+                pos.needsUpdate = true;
             });
 
             Object.values(activeRescuers).forEach(r => {
-                const baseHeight = r.mesh.position.y;
-                r.mesh.position.y = baseHeight + (Math.sin(time * 1.5 + r.pulseTime) * 0.05);
+                r.mesh.position.x += (r.target.x - r.mesh.position.x) * 0.08;
+                r.mesh.position.z += (r.target.z - r.mesh.position.z) * 0.08;
+                r.mesh.position.y = Math.sin(time * 1.5 + r.pulseTime) * 0.1;
             });
 
             renderer.render(scene, camera);
