@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rescue Team Field Interface - Auto Advance</title>
+    <style>
+        /* Global UI Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #0d0d0c;
+            font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            gap: 15px;
+        }
+
+        /* Live Data Input Feed Panel */
+        .data-feed-selector {
+            background-color: #111111;
+            border: 1px solid #333333;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #aaaaaa;
+        }
+
+        .data-feed-selector select {
+            background-color: #000000;
+            color: #ff6b00;
+            border: 1px solid #ff6b00;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-family: monospace;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Target Device Shell (360x640 Viewport) */
+        .device-container {
+            width: 360px;
+            height: 640px;
+            background-color: #000000;
+            border: 4px solid #333333;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+
+        /* Screen States */
+        .screen-state {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* --- STATE 1: NAVIGATION MODE --- */
+        .header-nav {
+            font-size: 12px;
+            font-weight: 700;
+            color: #888888;
+            letter-spacing: 1.5px;
+            text-align: center;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .body-nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .directional-arrow {
+            width: 140px;
+            height: 140px;
+            fill: #FF6B00; 
+            filter: drop-shadow(0px 0px 15px rgba(255, 107, 0, 0.4));
+            transition: transform 0.1s linear, fill 0.3s ease; 
+            transform: rotate(0deg); 
+        }
+
+        .readout-distance {
+            font-size: 54px;
+            font-weight: 900;
+            line-height: 1;
+            text-align: center;
+        }
+
+        .readout-depth {
+            font-size: 24px;
+            font-weight: 500;
+            color: #00E5FF; 
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .footer-nav {
+            text-align: center;
+            background-color: #111111;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px dashed #444444;
+            cursor: pointer;
+            animation: pulse-border 2s infinite;
+        }
+
+        .footer-nav p {
+            font-size: 13px;
+            font-weight: 600;
+            color: #aaaaaa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- STATE 2: TRIAGE MODE --- */
+        .header-triage {
+            background-color: #111111;
+            border: 1px solid #222222;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .victim-id {
+            font-family: monospace;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .vitals-status {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00C853; 
+            margin-top: 4px;
+        }
+
+        .body-triage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        /* Swipe Track Configurations */
+        .swipe-container {
+            position: relative;
+            height: 120px; 
+            border-radius: 60px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .swipe-label {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            pointer-events: none;
+            z-index: 1;
+            text-transform: uppercase;
+        }
+
+        .swipe-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 3;
+        }
+
+        .swipe-handle {
+            position: absolute;
+            left: 8px;
+            width: 104px;
+            height: 104px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 42px;
+            font-weight: bold;
+            color: white;
+            z-index: 2;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            pointer-events: none;
+            transition: left 0.05s linear;
+        }
+
+        .swipe-container.success {
+            background-color: #00230e; 
+            border: 2px solid #00C853;
+        }
+        .swipe-container.success .swipe-label { color: #a2fcd2; }
+        .swipe-container.success .swipe-handle { background-color: #00C853; }
+
+        .swipe-container.danger {
+            background-color: #260202; 
+            border: 2px solid #D50000;
+        }
+        .swipe-container.danger .swipe-label { color: #ffa3a3; }
+        .swipe-container.danger .swipe-handle { background-color: #D50000; }
+
+        .sim-info-box {
+            position: absolute;
+            bottom: -60px;
+            width: 100%;
+            text-align: center;
+            color: #666666;
+            font-size: 12px;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: #444444; }
+            50% { border-color: #FF6B00; }
+            100% { border-color: #444444; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="data-feed-selector">
+        <label for="victim-select">📡 ACTIVE COMMAND TARGET:</label>
+        <select id="victim-select" onchange="changeTargetVictim()">
+            </select>
+    </div>
+
+    <div class="device-container">
+        
+        <div id="screen-nav" class="screen-state">
+            <div class="header-nav" id="team-status">TEAM ALPHA - SEEKING</div>
+            
+            <div class="body-nav">
+                <svg id="arrow-icon" class="directional-arrow" viewBox="0 0 24 24">
+                    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+                </svg>
+                
+                <div>
+                    <div class="readout-distance" id="dist-text">--m</div>
+                    <div class="readout-depth" id="depth-text">↓ --m Below</div>
+                </div>
+            </div>
+            
+            <div class="footer-nav" onclick="simulateNFCScan()">
+                <p id="footer-prompt">
+                    <span id="prompt-text">NAVIGATING ON-GRID... (TAP TO SIMULATE NFC)</span>
+                </p>
+            </div>
+        </div>
+
+        <div id="screen-triage" class="screen-state hidden">
+            <div class="header-triage">
+                <div class="victim-id" id="triage-victim-id">FOUND: #----</div>
+                <div class="vitals-status" id="triage-vitals-status">Vitals: --</div>
+            </div>
+            
+            <div class="body-triage">
+                <div class="swipe-container success">
+                    <span class="swipe-label" id="label-success">Swipe to Confirm Rescue</span>
+                    <div class="swipe-handle" id="handle-success">✓</div>
+                    <input type="range" class="swipe-slider" id="slider-success" min="0" max="100" value="0">
+                </div>
+                
+                <div class="swipe-container danger">
+                    <span class="swipe-label" id="label-danger">Swipe to Confirm Dead</span>
+                    <div class="swipe-handle" id="handle-danger">✕</div>
+                    <input type="range" class="swipe-slider" id="slider-danger" min="0" max="100" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="sim-info-box">Simulation Environment Only</div>
+    </div>
+
+    <script>
+        // Data block parsed directly into application memory
+        const jsonData = {
+            "victims": [
+                {
+                    "victim_id": "7a8b9c2d-4e5f",
+                    "triage_status": "CRITICAL",
+                    "metrics": {
+                        "current_bpm": 167,
+                        "current_spo2": 82,
+                        "calculated_depth_meters": 4.2,
+                        "shock_index_score": 2.08,
+                        "last_vitals_update": "2026-06-11T16:30:00Z"
+                    },
+                    "flags": { "active_hemorrhage": true, "possible_panic": false, "manual_override": false },
+                    "location": { "x_coord": 42, "y_coord": 18, "confidence_radius_cells": 2.15 }
+                },
+                {
+                    "victim_id": "1a2b3c4d-5e6f",
+                    "triage_status": "URGENT",
+                    "metrics": {
+                        "current_bpm": 58,
+                        "current_spo2": 91,
+                        "calculated_depth_meters": 0.5,
+                        "shock_index_score": 0.72,
+                        "last_vitals_update": "2026-06-11T16:30:01Z"
+                    },
+                    "flags": { "active_hemorrhage": false, "possible_panic": false, "manual_override": false },
+                    "location": { "x_coord": 410, "y_coord": 85, "confidence_radius_cells": 3.4 }
+                },
+                {
+                    "victim_id": "9f8e7d6c-5b4a",
+                    "triage_status": "STABLE",
+                    "metrics": {
+                        "current_bpm": 135,
+                        "current_spo2": 98,
+                        "calculated_depth_meters": 1.5,
+                        "shock_index_score": 1.68,
+                        "last_vitals_update": "2026-06-11T16:30:02Z"
+                    },
+                    "flags": { "active_hemorrhage": false, "possible_panic": true, "manual_override": false },
+                    "location": { "x_coord": 120, "y_coord": 345, "confidence_radius_cells": 4.82 }
+                }
+            ],
+            "rescuers": [
+                { "rescuer_id": "Cmdr", "team": "Alpha", "status": "MOVING", "x": 10, "y": 14 }
+            ]
+        };
+
+        // Layout Nodes
+        const screenNav = document.getElementById('screen-nav');
+        const screenTriage = document.getElementById('screen-triage');
+        const arrowIcon = document.getElementById('arrow-icon');
+        const distText = document.getElementById('dist-text');
+        const depthText = document.getElementById('depth-text');
+        const teamStatus = document.getElementById('team-status');
+        const promptText = document.getElementById('prompt-text');
+        const dropdown = document.getElementById('victim-select');
+        
+        const triageId = document.getElementById('triage-victim-id');
+        const triageVitals = document.getElementById('triage-vitals-status');
+
+        const maxMove = 360 - 40 - 104 - 16; 
+
+        // State Trackers
+        let animationFrameId;
+        let activeVictimIndex = 0;
+        let rescuerX = jsonData.rescuers[0].x;
+        let rescuerY = jsonData.rescuers[0].y;
+        let visualAngle = 0;
+
+        // Initialize UI drop element states
+        function initDropdown() {
+            dropdown.innerHTML = "";
+            jsonData.victims.forEach((vic, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.innerHTML = `[${vic.triage_status}] ID: ${vic.victim_id.substring(0,8)}... (X:${vic.location.x_coord}, Y:${vic.location.y_coord})`;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        // Handles data vector shifts when targets update
+        function changeTargetVictim() {
+            activeVictimIndex = parseInt(dropdown.value);
+            
+            // Reset Rescuer location parameters to replicate a new search initialization profile
+            rescuerX = jsonData.rescuers[0].x;
+            rescuerY = jsonData.rescuers[0].y;
+            
+            arrowIcon.style.fill = "#FF6B00";
+            teamStatus.innerText = `TEAM ${jsonData.rescuers[0].team.toUpperCase()} - SEEKING`;
+            promptText.innerText = "NAVIGATING ON-GRID... (TAP TO SIMULATE NFC)";
+
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(calculateVectorPhysics);
+        }
+
+        // --- TRACKING VECTOR RUNTIME ENGINE ---
+        function calculateVectorPhysics() {
+            const victim = jsonData.victims[activeVictimIndex];
+            const targetX = victim.location.x_coord;
+            const targetY = victim.location.y_coord;
+
+            const deltaX = targetX - rescuerX;
+            const deltaY = targetY - rescuerY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            if (distance > 1.5) {
+                // Vector steps
+                rescuerX += deltaX * 0.012; 
+                rescuerY += deltaY * 0.012;
+
+                let targetAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI) - 90;
+                visualAngle += (targetAngle - visualAngle) * 0.1;
+                
+                let sensorNoise = Math.sin(Date.now() / 150) * 2.5;
+                
+                distText.innerText = distance.toFixed(1) + "m";
+                arrowIcon.style.transform = `rotate(${visualAngle + sensorNoise}deg)`;
+                depthText.innerText = `↓ ${victim.metrics.calculated_depth_meters}m Below`;
+
+                animationFrameId = requestAnimationFrame(calculateVectorPhysics);
+            } else {
+                distText.innerText = "0.0m";
+                arrowIcon.style.transform = `rotate(0deg)`;
+                arrowIcon.style.fill = "#FFD600";
+                teamStatus.innerText = "ARRIVED - ABOVE TARGET";
+                promptText.innerText = "TAG READY: TAP DEVICE TO RECORD STATUS";
+            }
+        }
+
+        function simulateNFCScan() {
+            cancelAnimationFrame(animationFrameId);
+            const victim = jsonData.victims[activeVictimIndex];
+            
+            triageId.innerText = `FOUND: #${victim.victim_id.toUpperCase()}`;
+            triageVitals.innerText = `Vitals: BPM ${victim.metrics.current_bpm} | SpO2 ${victim.metrics.current_spo2}%`;
+            
+            if (victim.triage_status === "CRITICAL") {
+                triageVitals.style.color = "#FFD600";
+            } else {
+                triageVitals.style.color = "#00C853";
+            }
+
+            screenNav.classList.add('hidden');
+            screenTriage.classList.remove('hidden');
+        }
+
+        // --- DOUBLE SWIPE LOGIC CHAIN ---
+        function setupSwipeComponent(sliderId, handleId, labelId, completionCallback) {
+            const slider = document.getElementById(sliderId);
+            const handle = document.getElementById(handleId);
+            const label = document.getElementById(labelId);
+
+            slider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                const newLeft = 8 + (value / 100) * maxMove;
+                handle.style.left = `${newLeft}px`;
+                label.style.opacity = 1 - (value / 55);
+
+                if (value >= 100) {
+                    completionCallback();
+                    resetSwipe(slider, handle, label);
+                }
+            });
+
+            const snapBack = () => { if (slider.value < 100) resetSwipe(slider, handle, label); };
+            slider.addEventListener('touchend', snapBack);
+            slider.addEventListener('mouseup', snapBack);
+        }
+
+        function resetSwipe(slider, handle, label) {
+            slider.value = 0;
+            handle.style.left = '8px';
+            label.style.opacity = 1;
+        }
+
+        setupSwipeComponent('slider-success', 'handle-success', 'label-success', () => {
+            submitStatus('RESCUED (V)');
+        });
+
+        setupSwipeComponent('slider-danger', 'handle-danger', 'label-danger', () => {
+            submitStatus('DECEASED (X)');
+        });
+
+        // --- AUTOMATIC PIPELINE MANAGEMENT SHIFT ---
+        function submitStatus(outcome) {
+            const victim = jsonData.victims[activeVictimIndex];
+            alert(`TELEMETRY SENT TO BASE STATION:\nTarget: ${victim.victim_id}\nTriage Assessment Locked: ${outcome}`);
+            
+            // 1. Instantly flip display cards back to map navigation framework
+            screenTriage.classList.add('hidden');
+            screenNav.classList.remove('hidden');
+            
+            // 2. Core Automation Loop: Advance index to next element in array queue
+            activeVictimIndex = (activeVictimIndex + 1) % jsonData.victims.length;
+            
+            // 3. Synchronize the UI drop panel index state match
+            dropdown.value = activeVictimIndex;
+            
+            // 4. Fire the physical translation calculations immediately
+            changeTargetVictim();
+        }
+
+        window.onload = () => {
+            initDropdown();
+            changeTargetVictim();
+        };
+    </script>
+</body>
+</html>

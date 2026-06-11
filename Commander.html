@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commander Dashboard | Live JSON Integration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; border: 2px solid #0f172a; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        #map-container canvas { display: block; border-radius: 0.75rem; outline: none; }
+        
+        body {
+            background: radial-gradient(circle at top left, #1e293b, #0f172a 60%, #020617);
+            background-attachment: fixed;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col font-sans overflow-x-hidden antialiased">
+
+    <nav class="bg-slate-900/50 backdrop-blur-md border-b border-white/5 p-4 flex justify-between items-center z-10 sticky top-0 shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="bg-teal-500/20 p-2 rounded-lg border border-teal-500/30">
+                <i class="fa-solid fa-satellite-dish text-teal-400 text-lg animate-pulse"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-wider text-slate-100">RESCUE<span class="text-teal-400 font-light">COMMAND</span></h1>
+        </div>
+        <div class="flex items-center space-x-6">
+            <div class="flex items-center space-x-2 bg-slate-800/50 px-3 py-1.5 rounded-full border border-white/5">
+                <span class="w-2.5 h-2.5 bg-teal-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.6)]" id="connection-status"></span>
+                <span class="text-xs font-semibold text-teal-300 uppercase tracking-wider" id="connection-text">Live Sync</span>
+            </div>
+            <div class="text-xs font-medium text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-full border border-white/5">Base ID: CMD-Alpha</div>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex flex-col p-6 gap-6 max-w-[1600px] mx-auto w-full mb-10">
+        
+        <div class="flex flex-col lg:flex-row gap-6 h-[420px] shrink-0">
+            
+            <div class="flex-1 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+                <div class="p-5 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/40 shrink-0">
+                    <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-heart-pulse text-rose-400 mr-2 opacity-80"></i>Trapped Civilians</h2>
+                    <span class="bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs px-3 py-1 rounded-full font-medium tracking-wide" id="trapped-count">0 FOUND</span>
+                </div>
+                <div id="trapped-list" class="flex-1 overflow-y-auto p-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <div class="text-slate-500 text-sm flex items-center justify-center col-span-full h-full font-light">Waiting for telemetry data...</div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-1/3 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+                <div class="p-5 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/40 shrink-0">
+                    <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-helmet-safety text-sky-400 mr-2 opacity-80"></i>Active Units</h2>
+                    <span class="bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs px-3 py-1 rounded-full font-medium tracking-wide" id="rescuer-count">0 DEPLOYED</span>
+                </div>
+                <div id="rescuer-list" class="flex-1 overflow-y-auto p-5 space-y-4">
+                    <div class="text-slate-500 text-sm flex items-center justify-center h-full font-light">Loading unit positions...</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="w-full bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-5 flex flex-col relative shadow-2xl h-[600px]">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 shrink-0 gap-3 px-1">
+                <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-layer-group text-slate-400 mr-2"></i>Spatial Topography</h2>
+                <div class="flex gap-4 text-xs font-medium text-slate-400 bg-slate-900/40 px-3 py-1.5 rounded-full border border-white/5">
+                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-rose-500 mr-2"></div> Critical</span>
+                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2"></div> Urgent</span>
+                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-teal-400 mr-2"></div> Stable</span>
+                    <span class="flex items-center ml-2 border-l border-slate-700 pl-4"><div class="w-2 h-2 rounded-full bg-sky-400 mr-2 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></div> Active Unit</span>
+                </div>
+            </div>
+            
+            <div id="map-container" class="flex-1 w-full relative bg-slate-950/50 border border-slate-700/50 rounded-xl overflow-hidden cursor-move shadow-inner"></div>
+        </div>
+        
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 1. SET UP THREE.JS SCENE ---
+        const container = document.getElementById('map-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#0f172a'); 
+        scene.fog = new THREE.FogExp2('#0f172a', 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 45, 75); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Performance cap
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 1.8; 
+
+        // Environment Grid
+        const gridSize = 100; 
+        const groundGrid = new THREE.GridHelper(gridSize, 25, 0x334155, 0x1e293b);
+        groundGrid.position.y = -0.01; 
+        scene.add(groundGrid);
+
+        const cmdGeo = new THREE.CircleGeometry(1.5, 32);
+        const cmdMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        const cmdMesh = new THREE.Mesh(cmdGeo, cmdMat);
+        cmdMesh.rotation.x = -Math.PI / 2;
+        scene.add(cmdMesh);
+
+        // --- 2. GLOBAL CACHED GEOMETRIES & MATERIALS (PERFORMANCE FIX) ---
+        // Creating these ONCE saves massive memory overhead
+        const sharedSphereGeo = new THREE.SphereGeometry(1.2, 12, 12); 
+        const sharedRingGeo = new THREE.RingGeometry(1.5, 1.8, 16); 
+
+        const materials = {
+            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
+            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b }),
+            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf }),
+            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+        };
+
+        const ringMaterials = {
+            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }),
+            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }),
+            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }),
+            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3 })
+        };
+
+        const lineMaterials = {
+            CRITICAL: new THREE.LineBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.4 }),
+            URGENT: new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.4 }),
+            STABLE: new THREE.LineBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.4 }),
+            RESCUER: new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 })
+        };
+
+        // --- 3. DATA MANAGEMENT ---
+        const activeVictims = {}; 
+        const activeRescuers = {};
+
+        function getTailwindColorForStatus(status) {
+            if(status === 'CRITICAL') return 'rose'; 
+            if(status === 'URGENT') return 'amber';   
+            return 'teal'; 
+        }
+
+        // Factory function for 3D units using shared memory
+        function create3DTarget(status, x, y, z) {
+            const mesh = new THREE.Mesh(sharedSphereGeo, materials[status]);
+            mesh.position.set(x, y, z);
+            
+            // Drop line (Created once, updated via position attributes later)
+            const lineGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array([0, -y, 0, 0, 0, 0]);
+            lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const line = new THREE.Line(lineGeo, lineMaterials[status]);
+            mesh.add(line);
+
+            let ring = null;
+            if (y < -0.5) {
+                ring = new THREE.Mesh(sharedRingGeo, ringMaterials[status]);
+                ring.rotation.x = -Math.PI / 2;
+                ring.position.y = -y; 
+                mesh.add(ring);
+            }
+
+            scene.add(mesh);
+            return { mesh, line, ring, pulseTime: Math.random() * 100 };
+        }
+
+        // DOM Card Builders
+        function createDOMCard(victim, index) {
+            const color = getTailwindColorForStatus(victim.triage_status);
+            const shortId = victim.victim_id.split('-')[0].toUpperCase();
+            const rank = index + 1; 
+            
+            return `
+                <div class="bg-slate-700/20 hover:bg-slate-700/40 transition-all duration-300 border border-white/5 rounded-xl p-4 relative overflow-hidden group shadow-lg backdrop-blur-sm" id="card-${victim.victim_id}">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-${color}-500/80 rounded-l-xl transition-all group-hover:bg-${color}-400"></div>
+                    <div class="flex justify-between items-center mb-4 pl-3">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-slate-900/60 text-slate-300 h-6 w-6 flex items-center justify-center rounded-full text-[10px] font-bold border border-white/5 shadow-inner">${rank}</span>
+                            <div>
+                                <div class="text-[10px] text-slate-400 tracking-wider mb-0.5 uppercase">UWB Signal</div>
+                                <div class="font-medium text-slate-200 text-sm">${shortId}</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-semibold bg-${color}-500/10 text-${color}-400 px-2.5 py-1 rounded-full uppercase tracking-wider border border-${color}-500/20">${victim.triage_status}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 pl-3">
+                        <div class="bg-slate-900/40 p-2 rounded-lg border border-white/5 flex flex-col items-center justify-center">
+                            <span class="text-[10px] text-slate-400 mb-1 tracking-wide">BPM</span>
+                            <span class="text-${color}-400 font-mono font-medium text-sm">${victim.metrics.current_bpm}</span>
+                        </div>
+                        <div class="bg-slate-900/40 p-2 rounded-lg border border-white/5 flex flex-col items-center justify-center">
+                            <span class="text-[10px] text-slate-400 mb-1 tracking-wide">SpO2</span>
+                            <span class="text-slate-200 font-mono font-medium text-sm">${victim.metrics.current_spo2}%</span>
+                        </div>
+                        <div class="bg-slate-900/40 p-2 rounded-lg border border-white/5 flex flex-col items-center justify-center">
+                            <span class="text-[10px] text-slate-400 mb-1 tracking-wide">DEPTH</span>
+                            <span class="text-slate-200 font-mono font-medium text-sm">${victim.metrics.calculated_depth_meters}m</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createRescuerCard(rescuer) {
+            const isMoving = rescuer.status === "MOVING";
+            const pulseClass = isMoving ? "animate-pulse" : "";
+            const statusColor = isMoving ? "sky" : "slate";
+            const formattedId = rescuer.rescuer_id.replace('_', ' ');
+
+            return `
+                <div class="bg-slate-700/20 border border-white/5 rounded-xl p-4 relative overflow-hidden group hover:bg-slate-700/30 transition-all duration-300 shadow-lg backdrop-blur-sm">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-sky-500/80 rounded-l-xl"></div>
+                    <div class="flex justify-between items-center pl-3">
+                        <div>
+                            <div class="text-[10px] text-slate-400 mb-0.5 uppercase tracking-wide">Team ${rescuer.team}</div>
+                            <div class="font-semibold text-slate-200 text-sm tracking-wide">${formattedId}</div>
+                        </div>
+                        <span class="text-[10px] font-semibold bg-${statusColor}-500/10 text-${statusColor}-400 px-2.5 py-1 rounded-full uppercase tracking-wider border border-${statusColor}-500/20 flex items-center gap-1.5">
+                            <div class="w-1.5 h-1.5 bg-${statusColor}-400 rounded-full ${pulseClass}"></div> ${rescuer.status}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Core Data Fetching
+        async function fetchLiveUWBData() {
+            try {
+                const response = await fetch('data.json?t=' + new Date().getTime());
+                if (!response.ok) throw new Error("Network response was not ok");
+                
+                const data = await response.json();
+                
+                document.getElementById('connection-status').classList.replace('bg-rose-500', 'bg-teal-400');
+                document.getElementById('connection-text').innerText = 'Live Sync';
+                document.getElementById('connection-text').classList.replace('text-rose-400', 'text-teal-300');
+                
+                // --- 1. Process Victims Array ---
+                document.getElementById('trapped-count').innerText = `${data.victims.length} FOUND`;
+                let victimHtml = '';
+
+                data.victims.forEach((victim, index) => {
+                    const vId = victim.victim_id;
+                    victimHtml += createDOMCard(victim, index);
+
+                    const vx = victim.location.x_coord / 10;
+                    const vy = -(victim.metrics.calculated_depth_meters);
+                    const vz = victim.location.y_coord / 10;
+                    const status = victim.triage_status;
+                    
+                    if (!activeVictims[vId]) {
+                        activeVictims[vId] = create3DTarget(status, vx, vy, vz);
+                    } else {
+                        // Interpolate position
+                        activeVictims[vId].mesh.position.lerp(new THREE.Vector3(vx, vy, vz), 0.1);
+                        
+                        // Apply cached materials
+                        activeVictims[vId].mesh.material = materials[status];
+                        activeVictims[vId].line.material = lineMaterials[status];
+                        if (activeVictims[vId].ring) {
+                            activeVictims[vId].ring.material = ringMaterials[status];
+                        }
+                        
+                        // Mutate line geometry instead of re-instantiating
+                        const posAttribute = activeVictims[vId].line.geometry.getAttribute('position');
+                        posAttribute.setY(0, -vy);
+                        posAttribute.needsUpdate = true;
+                    }
+                });
+                document.getElementById('trapped-list').innerHTML = victimHtml;
+
+                // --- 2. Process Rescuers Array ---
+                document.getElementById('rescuer-count').innerText = `${data.rescuers.length} DEPLOYED`;
+                let rescuerHtml = '';
+
+                data.rescuers.forEach(rescuer => {
+                    const rId = rescuer.rescuer_id;
+                    rescuerHtml += createRescuerCard(rescuer);
+
+                    const rx = rescuer.x / 10;
+                    const ry = 0; 
+                    const rz = rescuer.y / 10;
+
+                    if (!activeRescuers[rId]) {
+                        activeRescuers[rId] = create3DTarget('RESCUER', rx, ry, rz);
+                    } else {
+                        activeRescuers[rId].mesh.position.lerp(new THREE.Vector3(rx, ry, rz), 0.1);
+                    }
+                });
+                document.getElementById('rescuer-list').innerHTML = rescuerHtml;
+
+            } catch (error) {
+                console.error("Failed to fetch data.json", error);
+                document.getElementById('connection-status').classList.replace('bg-teal-400', 'bg-rose-500');
+                document.getElementById('connection-text').innerText = 'Offline';
+                document.getElementById('connection-text').classList.replace('text-teal-300', 'text-rose-400');
+            }
+        }
+
+        setInterval(fetchLiveUWBData, 2000);
+        fetchLiveUWBData(); 
+
+        // --- 4. ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const time = Date.now() * 0.002; 
+            
+            Object.values(activeVictims).forEach(t => {
+                const baseHeight = t.mesh.position.y;
+                t.mesh.position.y = baseHeight + (Math.sin(time + t.pulseTime) * 0.03); 
+            });
+
+            Object.values(activeRescuers).forEach(r => {
+                const baseHeight = r.mesh.position.y;
+                r.mesh.position.y = baseHeight + (Math.sin(time * 1.5 + r.pulseTime) * 0.05);
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+</body>
+</html>
