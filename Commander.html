@@ -476,8 +476,10 @@
                 // Build the debris terrain once we have the heightmap.
                 if (data.terrain) buildTerrain(data.terrain);
 
-                // --- 2. Process Rescuers Array ---
+                // --- Fill rescuer list FIRST so assign dropdowns have options ---
                 LATEST_RESCUERS = data.rescuers || [];
+
+                // --- 2. Process Rescuers Array ---
                 document.getElementById('rescuer-count').innerText = `${data.rescuers.length} DEPLOYED`;
                 let rescuerHtml = '';
                 const seenRescuerIds = new Set();
