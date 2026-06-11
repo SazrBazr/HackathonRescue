@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <thread>
 #include <curl/curl.h>
-#include "json.hpp"
+#include "lib/json.hpp"
 #include "localization.h"   // <-- the real math now lives in the pipeline
 
 using json = nlohmann::json;
