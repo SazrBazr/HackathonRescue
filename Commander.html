@@ -74,11 +74,16 @@
         <div class="w-full bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-5 flex flex-col relative shadow-2xl h-[600px]">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 shrink-0 gap-3 px-1">
                 <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-layer-group text-slate-400 mr-2"></i>Spatial Topography</h2>
-                <div class="flex gap-4 text-xs font-medium text-slate-400 bg-slate-900/40 px-3 py-1.5 rounded-full border border-white/5">
-                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-rose-500 mr-2"></div> Critical</span>
-                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2"></div> Urgent</span>
-                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-teal-400 mr-2"></div> Stable</span>
-                    <span class="flex items-center ml-2 border-l border-slate-700 pl-4"><div class="w-2 h-2 rounded-full bg-sky-400 mr-2 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></div> Active Unit</span>
+                <div class="flex items-center gap-3">
+                    <button id="terrain-btn" onclick="toggleTerrain()" class="text-xs font-medium text-slate-200 bg-slate-700/50 hover:bg-slate-600 px-3 py-1.5 rounded-full border border-white/10 transition-all">
+                        <i class="fa-solid fa-mountain text-slate-400 mr-1.5"></i>Show Debris Terrain
+                    </button>
+                    <div class="flex gap-4 text-xs font-medium text-slate-400 bg-slate-900/40 px-3 py-1.5 rounded-full border border-white/5">
+                        <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-rose-500 mr-2"></div> Critical</span>
+                        <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2"></div> Urgent</span>
+                        <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-teal-400 mr-2"></div> Stable</span>
+                        <span class="flex items-center ml-2 border-l border-slate-700 pl-4"><div class="w-2 h-2 rounded-full bg-sky-400 mr-2 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></div> Active Unit</span>
+                    </div>
                 </div>
             </div>
             
@@ -255,6 +260,49 @@
             return { mesh: m };
         }
 
+        // --- TERRAIN: translucent gray rubble surface from the drone heightmap ---
+        let terrainMesh = null;
+        let terrainVisible = false;
+        function buildTerrain(terrain) {
+            if (terrainMesh) return;                  // build once
+            const n = terrain.grid;
+            const geo = new THREE.PlaneGeometry(SITE, SITE, n - 1, n - 1);
+            const pos = geo.attributes.position;
+            // PlaneGeometry vertices go row by row; set Z (height) per cell, then
+            // we rotate the plane flat so Z becomes world-up (Y).
+            for (let j = 0; j < n; j++) {
+                for (let i = 0; i < n; i++) {
+                    const idx = j * n + i;
+                    pos.setZ(idx, terrain.cells[j][i] * DEPTH_VIS);
+                }
+            }
+            geo.computeVertexNormals();
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x9ca3af, transparent: true, opacity: 0.28,
+                side: THREE.DoubleSide, wireframe: false
+            });
+            terrainMesh = new THREE.Mesh(geo, mat);
+            terrainMesh.rotation.x = -Math.PI / 2;     // lay flat; height -> up
+            terrainMesh.visible = terrainVisible;
+            scene.add(terrainMesh);
+
+            // a subtle wireframe overlay so the rubble shape reads clearly
+            const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+                color: 0xcbd5e1, wireframe: true, transparent: true, opacity: 0.15
+            }));
+            terrainMesh.add(wire);
+        }
+        function toggleTerrain() {
+            terrainVisible = !terrainVisible;
+            if (terrainMesh) terrainMesh.visible = terrainVisible;
+            const btn = document.getElementById('terrain-btn');
+            if (btn) {
+                btn.classList.toggle('bg-slate-600', terrainVisible);
+                btn.innerText = terrainVisible ? 'Hide Debris Terrain' : 'Show Debris Terrain';
+            }
+        }
+        window.toggleTerrain = toggleTerrain;
+
         // DOM Card Builders
         function createDOMCard(victim, index) {
             const color = getTailwindColorForStatus(victim.triage_status);
@@ -301,9 +349,43 @@
                             <span class="text-slate-200 font-mono font-medium text-sm">${victim.metrics.calculated_depth_meters}m</span>
                         </div>
                     </div>
+                    ${buildAssignRow(victim)}
                 </div>
             `;
         }
+
+        // Assignment row: shows who's assigned (and whether confirmed), or a
+        // dropdown + button for the commander to assign a rescuer to this victim.
+        function buildAssignRow(victim) {
+            if (victim.triage_status === 'NO_SIGNAL') return '';
+            const a = victim.assigned_to;
+            if (a) {
+                const badge = a.confirmed
+                    ? `<span class="text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i>${a.rescuer_id} confirmed</span>`
+                    : `<span class="text-amber-400"><i class="fa-solid fa-hourglass-half mr-1"></i>${a.rescuer_id} assigned (awaiting confirm)</span>`;
+                return `<div class="mt-3 ml-3 text-[11px] font-medium bg-slate-900/40 border border-white/5 rounded-lg px-2.5 py-1.5">${badge}
+                    <button onclick="assignVictim('${victim.victim_id}', document.getElementById('sel-${victim.victim_id}')?.value)" class="hidden"></button></div>`;
+            }
+            const opts = LATEST_RESCUERS.map(r => `<option value="${r.rescuer_id}">${r.rescuer_id}</option>`).join('');
+            return `<div class="mt-3 ml-3 flex items-center gap-2">
+                <select id="sel-${victim.victim_id}" class="bg-slate-900/60 text-slate-200 text-[11px] rounded-lg px-2 py-1.5 border border-white/10 flex-1">${opts}</select>
+                <button onclick="assignVictim('${victim.victim_id}', document.getElementById('sel-${victim.victim_id}').value)"
+                    class="text-[11px] font-semibold bg-sky-600/80 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg transition-all">Assign</button>
+            </div>`;
+        }
+
+        let LATEST_RESCUERS = [];
+        async function assignVictim(victimId, rescuerId) {
+            if (!rescuerId) return;
+            try {
+                await fetch(API_URL.replace('/state', '/assign'), {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ rescuer_id: rescuerId, victim_id: victimId })
+                });
+                fetchLiveUWBData();   // refresh immediately so the card updates
+            } catch (e) { console.error('assign failed', e); }
+        }
+        window.assignVictim = assignVictim;
 
         function createRescuerCard(rescuer) {
             const isMoving = rescuer.status === "MOVING";
@@ -391,7 +473,11 @@
                     }
                 });
 
+                // Build the debris terrain once we have the heightmap.
+                if (data.terrain) buildTerrain(data.terrain);
+
                 // --- 2. Process Rescuers Array ---
+                LATEST_RESCUERS = data.rescuers || [];
                 document.getElementById('rescuer-count').innerText = `${data.rescuers.length} DEPLOYED`;
                 let rescuerHtml = '';
                 const seenRescuerIds = new Set();

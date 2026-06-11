@@ -41,12 +41,21 @@ victims = [
     {"victim_id": "3a4b5c6d-7e8f", "base_bpm": 80,  "base_spo2": 99, "true": (35.0, 12.0, -0.8)},
 ]
 
-# Rescue teams (cleaner names than Alpha/Beta).
+# Rescue teams. Each carries a small "behaviour state" so they move REALISTICALLY:
+# they pick a state (idle or walking) + a facing heading, hold it for ~4 seconds,
+# then re-randomize. No more frame-by-frame jitter.
 rescuers = [
-    {"rescuer_id": "Rescuer-1", "team": "North", "status": "MOVING",  "x": 5,  "y": 5},
-    {"rescuer_id": "Rescuer-2", "team": "North", "status": "MOVING",  "x": 8,  "y": 6},
-    {"rescuer_id": "Rescuer-3", "team": "South", "status": "STANDBY", "x": 0,  "y": 0},
+    {"rescuer_id": "Rescuer-1", "team": "North", "x": 18.0, "y": 22.0},
+    {"rescuer_id": "Rescuer-2", "team": "North", "x": 55.0, "y": 60.0},
+    {"rescuer_id": "Rescuer-3", "team": "South", "x": 80.0, "y": 35.0},
 ]
+for r in rescuers:
+    r["state"] = "idle"
+    r["heading"] = random.uniform(0, 360)
+    r["hold"] = 0
+
+HOLD_CYCLES = 2          # 2 cycles * 2s = ~4 seconds per stable state
+WALK_STEP_M = 1.2        # slow, human-paced movement per cycle
 
 RANGE_NOISE_M = 0.5
 
@@ -96,11 +105,24 @@ try:
                                     "hemorrhage": crisis, "anchors": anchors})
 
         for r in rescuers:
-            if r["status"] == "MOVING":
-                r["x"] = max(0, min(100, r["x"] + random.choice([-1, 0, 1])))
-                r["y"] = max(0, min(100, r["y"] + random.choice([-1, 0, 1])))
-            payload_rescuers.append({"rescuer_id": r["rescuer_id"], "team": r["team"],
-                                     "status": r["status"], "x": r["x"], "y": r["y"]})
+            # Hold the current state for ~4s, then re-randomize (stable, logical).
+            if r["hold"] <= 0:
+                r["state"] = random.choice(["idle", "walking", "walking"])  # bias to moving
+                r["heading"] = random.uniform(0, 360)
+                r["hold"] = HOLD_CYCLES
+            r["hold"] -= 1
+
+            if r["state"] == "walking":
+                rad = math.radians(r["heading"])
+                r["x"] = max(0.0, min(100.0, r["x"] + math.cos(rad) * WALK_STEP_M))
+                r["y"] = max(0.0, min(100.0, r["y"] + math.sin(rad) * WALK_STEP_M))
+
+            payload_rescuers.append({
+                "rescuer_id": r["rescuer_id"], "team": r["team"],
+                "status": "MOVING" if r["state"] == "walking" else "STANDBY",
+                "x": round(r["x"], 2), "y": round(r["y"], 2),
+                "heading": round(r["heading"], 1)
+            })
 
         # Beacons are static & known; ship their positions so the map can draw them.
         payload_beacons = [{"beacon_id": b["beacon_id"], "x": b["x"], "y": b["y"],
