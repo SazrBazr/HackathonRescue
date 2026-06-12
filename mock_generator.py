@@ -39,6 +39,7 @@ victims = [
     {"victim_id": "2e3f4a5b-6c7d", "base_bpm": 110, "base_spo2": 88, "true": (20.0, 30.0, -4.0)},
     {"victim_id": "8d9e0f1a-2b3c", "base_bpm": 145, "base_spo2": 90, "true": (62.0, 78.0, -3.0)},
     {"victim_id": "3a4b5c6d-7e8f", "base_bpm": 80,  "base_spo2": 99, "true": (35.0, 12.0, -0.8)},
+    {"victim_id": "00a1b2c3-dead", "base_bpm": 0,   "base_spo2": 0,  "true": (80.0, 80.0, -3.5)}
 ]
 
 # Rescue teams. Each carries a small "behaviour state" so they move REALISTICALLY:
@@ -85,13 +86,19 @@ try:
 
         for v in victims:
             tx, ty, tz = v["true"]
-            bpm = max(40, min(200, v["base_bpm"] + random.randint(-4, 4)))
-            spo2 = max(50, min(100, v["base_spo2"] + random.randint(-2, 1)))
+            if v["base_bpm"] == 0:
+                bpm = 0
+                spo2 = 0
+                crisis = False
+            else:
 
-            crisis = random.random() < 0.05
-            if crisis:
-                bpm += 25
-                spo2 -= 8
+                bpm = max(40, min(200, v["base_bpm"] + random.randint(-4, 4)))
+                spo2 = max(50, min(100, v["base_spo2"] + random.randint(-2, 1)))
+
+                crisis = random.random() < 0.05
+                if crisis:
+                    bpm += 25
+                    spo2 -= 8
 
             anchors = []
             for a in all_anchor_positions:

@@ -85,6 +85,10 @@
                     <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-rose-500 mr-2"></div> Critical</span>
                     <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2"></div> Urgent</span>
                     <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-teal-400 mr-2"></div> Stable</span>
+
+<span class="flex items-center"><div class="w-2 h-2 rounded-full bg-black border border-slate-500 mr-2"></div> No Pulse</span>
+
+
                     <span class="flex items-center ml-2 border-l border-slate-700 pl-4"><div class="w-2 h-2 rounded-full bg-sky-400 mr-2 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></div> Active Unit</span>
                 </div>
             </div>
@@ -151,6 +155,7 @@
         URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, fog: false }),
         STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, fog: false }),
         NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.55, fog: false }),
+NO_PULSE: new THREE.MeshBasicMaterial({ color: 0x000000, fog: false }),
         RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false })
     };
 
@@ -159,6 +164,7 @@
         URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
         STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
         NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, side: THREE.DoubleSide, transparent: true, opacity: 0.2, fog: false }),
+NO_PULSE: new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide, transparent: true, opacity: 0.2, fog: false }),
         RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false })
     };
 
@@ -168,6 +174,7 @@
         URGENT: new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.4 }),
         STABLE: new THREE.LineBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.4 }),
         NO_SIGNAL: new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.25 }),
+NO_PULSE: new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4 }),
         RESCUER: new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 })
     };
 
@@ -193,7 +200,7 @@
     function getTailwindColorForStatus(status) {
         if(status === 'CRITICAL') return 'rose';
         if(status === 'URGENT') return 'amber';
-        if(status === 'NO_SIGNAL') return 'slate';
+        if(status === 'NO_SIGNAL' || status === 'NO_PULSE') return 'slate';
         return 'teal';
     }
 
@@ -488,6 +495,17 @@
             window.CURRENT_VICTIMS = data.victims || [];
             window.CURRENT_RESCUERS = data.rescuers || [];
             LATEST_RESCUERS = data.rescuers || [];
+		data.victims.forEach(v => {
+                if (v.metrics && v.metrics.current_bpm === 0) {
+                    v.triage_status = 'NO_PULSE';
+                }
+            });
+
+		data.victims.sort((a, b) => {
+                if (a.triage_status === 'NO_PULSE' && b.triage_status !== 'NO_PULSE') return 1;
+                if (a.triage_status !== 'NO_PULSE' && b.triage_status === 'NO_PULSE') return -1;
+                return 0; // keep all the living victims in their original order
+            });
 
             // --- 1. Process Victims Array ---
             document.getElementById('trapped-count').innerText = `${data.victims.length} FOUND`;
