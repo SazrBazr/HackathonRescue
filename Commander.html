@@ -12,7 +12,7 @@
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; border: 2px solid #0f172a; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         #map-container canvas { display: block; border-radius: 0.75rem; outline: none; }
-        
+
         body {
             background: radial-gradient(circle at top left, #1e293b, #0f172a 60%, #020617);
             background-attachment: fixed;
@@ -32,302 +32,314 @@
 <div class="hidden bg-rose-500/10 text-rose-400 border-rose-500/20 bg-amber-500/10 text-amber-400 border-amber-500/20 bg-slate-500/10 text-slate-400 border-slate-500/20 bg-teal-500/10 text-teal-400 border-teal-500/20 bg-rose-500/80 bg-rose-400 bg-amber-500/80 bg-amber-400 bg-slate-500/80 bg-slate-400 bg-teal-500/80 bg-teal-400"></div>
 
 
-    <nav class="bg-slate-900/50 backdrop-blur-md border-b border-white/5 p-4 flex justify-between items-center z-10 sticky top-0 shadow-lg">
-        <div class="flex items-center space-x-3">
-            <div class="bg-teal-500/20 p-2 rounded-lg border border-teal-500/30">
-                <i class="fa-solid fa-satellite-dish text-teal-400 text-lg animate-pulse"></i>
-            </div>
-            <h1 class="text-xl font-bold tracking-wider text-slate-100">RESCUE<span class="text-teal-400 font-light">COMMAND</span></h1>
+<nav class="bg-slate-900/50 backdrop-blur-md border-b border-white/5 p-4 flex justify-between items-center z-10 sticky top-0 shadow-lg">
+    <div class="flex items-center space-x-3">
+        <div class="bg-teal-500/20 p-2 rounded-lg border border-teal-500/30">
+            <i class="fa-solid fa-satellite-dish text-teal-400 text-lg animate-pulse"></i>
         </div>
-        <div class="flex items-center space-x-6">
-            <div class="flex items-center space-x-2 bg-slate-800/50 px-3 py-1.5 rounded-full border border-white/5">
-                <span class="w-2.5 h-2.5 bg-teal-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.6)]" id="connection-status"></span>
-                <span class="text-xs font-semibold text-teal-300 uppercase tracking-wider" id="connection-text">Live Sync</span>
-            </div>
-            <div class="text-xs font-medium text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-full border border-white/5">Base ID: RescueGrid</div>
+        <h1 class="text-xl font-bold tracking-wider text-slate-100">RESCUE<span class="text-teal-400 font-light">COMMAND</span></h1>
+    </div>
+    <div class="flex items-center space-x-6">
+        <div class="flex items-center space-x-2 bg-slate-800/50 px-3 py-1.5 rounded-full border border-white/5">
+            <span class="w-2.5 h-2.5 bg-teal-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.6)]" id="connection-status"></span>
+            <span class="text-xs font-semibold text-teal-300 uppercase tracking-wider" id="connection-text">Live Sync</span>
         </div>
-    </nav>
+        <button onclick="toggleAssignModal()" class="text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 px-4 py-1.5 rounded-full border border-sky-400/50 shadow-[0_0_12px_rgba(2,132,199,0.5)] transition-all uppercase tracking-wider"><i class="fa-solid fa-clipboard-user mr-2"></i>Assign Units</button>
+    </div>
+</nav>
 
-    <div class="flex-1 flex flex-col p-6 gap-6 max-w-[1600px] mx-auto w-full mb-10">
-        
-        <div class="flex flex-col lg:flex-row gap-6 h-[420px] shrink-0">
-            
-            <div class="flex-1 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
-                <div class="p-5 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/40 shrink-0">
-                    <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-heart-pulse text-rose-400 mr-2 opacity-80"></i>Trapped Civilians</h2>
-                    <span class="bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs px-3 py-1 rounded-full font-medium tracking-wide" id="trapped-count">0 FOUND</span>
-                </div>
-                <div id="trapped-list" class="flex-1 overflow-y-auto p-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    <div class="text-slate-500 text-sm flex items-center justify-center col-span-full h-full font-light">Waiting for telemetry data...</div>
-                </div>
+<div class="flex-1 flex flex-col p-6 gap-6 max-w-[1600px] mx-auto w-full mb-10">
+
+    <div class="flex flex-col lg:flex-row gap-6 h-[420px] shrink-0">
+
+        <div class="flex-1 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/40 shrink-0">
+                <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-heart-pulse text-rose-400 mr-2 opacity-80"></i>Trapped Civilians</h2>
+                <span class="bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs px-3 py-1 rounded-full font-medium tracking-wide" id="trapped-count">0 FOUND</span>
             </div>
-
-            <div class="w-full lg:w-1/3 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
-                <div class="p-5 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/40 shrink-0">
-                    <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-helmet-safety text-sky-400 mr-2 opacity-80"></i>Active Units</h2>
-                    <span class="bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs px-3 py-1 rounded-full font-medium tracking-wide" id="rescuer-count">0 DEPLOYED</span>
-                </div>
-                <div id="rescuer-list" class="flex-1 overflow-y-auto p-5 space-y-4">
-                    <div class="text-slate-500 text-sm flex items-center justify-center h-full font-light">Loading unit positions...</div>
-                </div>
+            <div id="trapped-list" class="flex-1 overflow-y-auto p-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div class="text-slate-500 text-sm flex items-center justify-center col-span-full h-full font-light">Waiting for telemetry data...</div>
             </div>
-
         </div>
 
-        <div class="w-full bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-5 flex flex-col relative shadow-2xl h-[600px]">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 shrink-0 gap-3 px-1">
-                <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-layer-group text-slate-400 mr-2"></i>Spatial Topography</h2>
-                <div class="flex items-center gap-3">
-                    <button id="terrain-btn" onclick="toggleTerrain()" class="text-xs font-medium text-slate-200 bg-slate-700/50 hover:bg-slate-600 px-3 py-1.5 rounded-full border border-white/10 transition-all">
-                        <i class="fa-solid fa-mountain text-slate-400 mr-1.5"></i>Show Debris Terrain
-                    </button>
-                    <div class="flex gap-4 text-xs font-medium text-slate-400 bg-slate-900/40 px-3 py-1.5 rounded-full border border-white/5">
-                        <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-rose-500 mr-2"></div> Critical</span>
-                        <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2"></div> Urgent</span>
-                        <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-teal-400 mr-2"></div> Stable</span>
-                        <span class="flex items-center ml-2 border-l border-slate-700 pl-4"><div class="w-2 h-2 rounded-full bg-sky-400 mr-2 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></div> Active Unit</span>
-                    </div>
-                </div>
+        <div class="w-full lg:w-1/3 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/40 shrink-0">
+                <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-helmet-safety text-sky-400 mr-2 opacity-80"></i>Active Units</h2>
+                <span class="bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs px-3 py-1 rounded-full font-medium tracking-wide" id="rescuer-count">0 DEPLOYED</span>
             </div>
-            
-            <div id="map-container" class="flex-1 w-full relative bg-slate-950/50 border border-slate-700/50 rounded-xl overflow-hidden cursor-move shadow-inner"></div>
+            <div id="rescuer-list" class="flex-1 overflow-y-auto p-5 space-y-4">
+                <div class="text-slate-500 text-sm flex items-center justify-center h-full font-light">Loading unit positions...</div>
+            </div>
         </div>
-        
+
     </div>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    <div class="w-full bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-5 flex flex-col relative shadow-2xl h-[600px]">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 shrink-0 gap-3 px-1">
+            <h2 class="text-base font-semibold text-slate-200 tracking-wide"><i class="fa-solid fa-layer-group text-slate-400 mr-2"></i>Spatial Topography</h2>
+            <div class="flex items-center gap-3">
+                <button id="terrain-btn" onclick="toggleTerrain()" class="text-xs font-medium text-slate-200 bg-slate-700/50 hover:bg-slate-600 px-3 py-1.5 rounded-full border border-white/10 transition-all">
+                    <i class="fa-solid fa-mountain text-slate-400 mr-1.5"></i>Show Debris Terrain
+                </button>
+                <div class="flex gap-4 text-xs font-medium text-slate-400 bg-slate-900/40 px-3 py-1.5 rounded-full border border-white/5">
+                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-rose-500 mr-2"></div> Critical</span>
+                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2"></div> Urgent</span>
+                    <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-teal-400 mr-2"></div> Stable</span>
+                    <span class="flex items-center ml-2 border-l border-slate-700 pl-4"><div class="w-2 h-2 rounded-full bg-sky-400 mr-2 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></div> Active Unit</span>
+                </div>
+            </div>
+        </div>
 
-        // --- 1. SET UP THREE.JS SCENE ---
-        const container = document.getElementById('map-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color('#0f172a'); 
-        scene.fog = new THREE.FogExp2('#0f172a', 0.015);
+        <div id="map-container" class="flex-1 w-full relative bg-slate-950/50 border border-slate-700/50 rounded-xl overflow-hidden cursor-move shadow-inner"></div>
+    </div>
 
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 45, 75); 
+</div>
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Performance cap
-        container.appendChild(renderer.domElement);
+<div id="dispatch-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-600 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[80vh]">
+        <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 rounded-t-2xl shrink-0">
+            <h2 class="text-lg font-bold text-slate-200 tracking-wide"><i class="fa-solid fa-clipboard-user text-sky-400 mr-2"></i>Dispatch Console</h2>
+            <button onclick="toggleAssignModal()" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        </div>
+        <div id="dispatch-list" class="p-5 overflow-y-auto flex-1 space-y-4">
+        </div>
+    </div>
+</div>
 
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 1.8; 
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // Environment Grid
-        const gridSize = 100; 
-        const groundGrid = new THREE.GridHelper(gridSize, 25, 0x334155, 0x1e293b);
-        groundGrid.position.y = -0.01; 
-        scene.add(groundGrid);
+    // --- 1. SET UP THREE.JS SCENE ---
+    const container = document.getElementById('map-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0f172a');
+    scene.fog = new THREE.FogExp2('#0f172a', 0.015);
 
-        const cmdGeo = new THREE.CircleGeometry(1.5, 32);
-        const cmdMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-        const cmdMesh = new THREE.Mesh(cmdGeo, cmdMat);
-        cmdMesh.rotation.x = -Math.PI / 2;
-        scene.add(cmdMesh);
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 45, 75);
 
-        // --- 2. GLOBAL CACHED GEOMETRIES & MATERIALS (PERFORMANCE FIX) ---
-        // Creating these ONCE saves massive memory overhead
-        const sharedSphereGeo = new THREE.SphereGeometry(1.2, 12, 12); 
-        const sharedRingGeo = new THREE.RingGeometry(1.5, 1.8, 16); 
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Performance cap
+    container.appendChild(renderer.domElement);
 
-        const materials = {
-            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, fog: false }),
-            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, fog: false }),
-            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, fog: false }),
-            NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.55, fog: false }),
-            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false })
-        };
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 1.8;
 
-const ringMaterials = {
-            CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
-            URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
-            STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
-            NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, side: THREE.DoubleSide, transparent: true, opacity: 0.2, fog: false }),
-            RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false })
-        };
+    // Environment Grid
+    const gridSize = 100;
+    const groundGrid = new THREE.GridHelper(gridSize, 25, 0x334155, 0x1e293b);
+    groundGrid.position.y = -0.01;
+    scene.add(groundGrid);
 
-        const lineMaterials = {
-            CRITICAL: new THREE.LineBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.4 }),
-            URGENT: new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.4 }),
-            STABLE: new THREE.LineBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.4 }),
-            NO_SIGNAL: new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.25 }),
-            RESCUER: new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 })
-        };
+    const cmdGeo = new THREE.CircleGeometry(1.5, 32);
+    const cmdMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+    const cmdMesh = new THREE.Mesh(cmdGeo, cmdMat);
+    cmdMesh.rotation.x = -Math.PI / 2;
+    scene.add(cmdMesh);
 
-        // Brown markers for the fixed ground beacons.
-        const beaconGeo = new THREE.BoxGeometry(2.2, 4, 2.2);
-        const beaconMat = new THREE.MeshBasicMaterial({ color: 0xb45309 });
-        const beaconMasterMat = new THREE.MeshBasicMaterial({ color: 0x92400e });
+    // --- 2. GLOBAL CACHED GEOMETRIES & MATERIALS (PERFORMANCE FIX) ---
+    // Creating these ONCE saves massive memory overhead
+    const sharedSphereGeo = new THREE.SphereGeometry(1.2, 12, 12);
+    const sharedRingGeo = new THREE.RingGeometry(1.5, 1.8, 16);
 
-        // --- COORDINATE MAPPING ---
-        // The field is a 100m x 100m site. We center it on the grid (which spans
-        // -50..50) so victims spread across the whole map instead of bunching in
-        // one corner. Depth is exaggerated a little so buried victims read clearly.
-        const SITE = 100;
-        const DEPTH_VIS = 2.2;            // visual exaggeration of depth only
-        function mapXY(coord) { return coord - SITE / 2; }   // 0..100 -> -50..50
-        function depthToY(depthMeters) { return -depthMeters * DEPTH_VIS; }
+    const materials = {
+        CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, fog: false }),
+        URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, fog: false }),
+        STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, fog: false }),
+        NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.55, fog: false }),
+        RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false })
+    };
 
-        // --- 3. DATA MANAGEMENT ---
-        const activeVictims = {}; 
-        const activeRescuers = {};
-        const activeBeacons = {};
+    const ringMaterials = {
+        CRITICAL: new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
+        URGENT: new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
+        STABLE: new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false }),
+        NO_SIGNAL: new THREE.MeshBasicMaterial({ color: 0x64748b, side: THREE.DoubleSide, transparent: true, opacity: 0.2, fog: false }),
+        RESCUER: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3, fog: false })
+    };
 
-        function getTailwindColorForStatus(status) {
-            if(status === 'CRITICAL') return 'rose'; 
-            if(status === 'URGENT') return 'amber';   
-            if(status === 'NO_SIGNAL') return 'slate';
-            return 'teal'; 
+
+    const lineMaterials = {
+        CRITICAL: new THREE.LineBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.4 }),
+        URGENT: new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.4 }),
+        STABLE: new THREE.LineBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.4 }),
+        NO_SIGNAL: new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.25 }),
+        RESCUER: new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 })
+    };
+
+    // Brown markers for the fixed ground beacons.
+    const beaconGeo = new THREE.BoxGeometry(2.2, 4, 2.2);
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xb45309 });
+    const beaconMasterMat = new THREE.MeshBasicMaterial({ color: 0x92400e });
+
+    // --- COORDINATE MAPPING ---
+    // The field is a 100m x 100m site. We center it on the grid (which spans
+    // -50..50) so victims spread across the whole map instead of bunching in
+    // one corner. Depth is exaggerated a little so buried victims read clearly.
+    const SITE = 100;
+    const DEPTH_VIS = 2.2;            // visual exaggeration of depth only
+    function mapXY(coord) { return coord - SITE / 2; }   // 0..100 -> -50..50
+    function depthToY(depthMeters) { return -depthMeters * DEPTH_VIS; }
+
+    // --- 3. DATA MANAGEMENT ---
+    const activeVictims = {};
+    const activeRescuers = {};
+    const activeBeacons = {};
+
+    function getTailwindColorForStatus(status) {
+        if(status === 'CRITICAL') return 'rose';
+        if(status === 'URGENT') return 'amber';
+        if(status === 'NO_SIGNAL') return 'slate';
+        return 'teal';
+    }
+
+    // Build a floating number badge (priority rank) as a sprite.
+    function makeNumberSprite(text) {
+        const c = document.createElement('canvas');
+        c.width = 128; c.height = 128;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = 'rgba(15,23,42,0.85)';
+        ctx.beginPath(); ctx.arc(64, 64, 52, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 6; ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 72px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(text, 64, 68);
+        const tex = new THREE.CanvasTexture(c);
+        const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+        spr.scale.set(3.5, 3.5, 1);
+        spr.userData.text = text;
+        return spr;
+    }
+
+    const sharedCanvas = document.createElement('canvas');
+    sharedCanvas.width = 128; sharedCanvas.height = 128;
+    const sharedCtx = sharedCanvas.getContext('2d');
+
+    function setSpriteNumber(sprite, text) {
+        if (sprite.userData.text === text) return;
+        sharedCtx.clearRect(0, 0, 128, 128);
+        sharedCtx.fillStyle = 'rgba(15,23,42,0.85)';
+        sharedCtx.beginPath(); sharedCtx.arc(64, 64, 52, 0, Math.PI * 2); sharedCtx.fill();
+        sharedCtx.strokeStyle = '#e2e8f0'; sharedCtx.lineWidth = 4; sharedCtx.stroke();
+        sharedCtx.fillStyle = '#ffffff';
+        sharedCtx.font = 'bold 32px sans-serif';
+        sharedCtx.textAlign = 'center'; sharedCtx.textBaseline = 'middle';
+        sharedCtx.fillText(text, 64, 68);
+
+        if(sprite.material.map) sprite.material.map.dispose();
+        sprite.material.map = new THREE.CanvasTexture(sharedCanvas);
+        sprite.material.needsUpdate = true;
+        sprite.userData.text = text;
+    }
+
+    // Factory for victim/rescuer markers. Stores a glide TARGET so the
+    // animation loop can move smoothly instead of teleporting each poll.
+    function create3DTarget(status, x, y, z, rankText) {
+        const mesh = new THREE.Mesh(sharedSphereGeo, materials[status]);
+        mesh.position.set(x, y, z);
+
+        const lineGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array([0, -y, 0, 0, 0, 0]);
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const line = new THREE.Line(lineGeo, lineMaterials[status]);
+        mesh.add(line);
+
+        let ring = null;
+        if (y < -0.5) {
+            ring = new THREE.Mesh(sharedRingGeo, ringMaterials[status]);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = -y;
+            mesh.add(ring);
         }
 
-        // Build a floating number badge (priority rank) as a sprite.
-        function makeNumberSprite(text) {
-            const c = document.createElement('canvas');
-            c.width = 128; c.height = 128;
-            const ctx = c.getContext('2d');
-            ctx.fillStyle = 'rgba(15,23,42,0.85)';
-            ctx.beginPath(); ctx.arc(64, 64, 52, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 6; ctx.stroke();
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 72px sans-serif';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(text, 64, 68);
-            const tex = new THREE.CanvasTexture(c);
-            const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
-            spr.scale.set(3.5, 3.5, 1);
-            spr.userData.text = text;
-            return spr;
+        let label = null;
+        if (rankText != null) {
+            label = makeNumberSprite(rankText);
+            label.position.set(0, 3, 0);   // hover above the sphere
+            mesh.add(label);
         }
 
-        const sharedCanvas = document.createElement('canvas');
-        sharedCanvas.width = 128; sharedCanvas.height = 128;
-        const sharedCtx = sharedCanvas.getContext('2d');
+        scene.add(mesh);
+        return { mesh, line, ring, label,
+            target: new THREE.Vector3(x, y, z),
+            pulseTime: Math.random() * 100 };
+    }
 
-        function setSpriteNumber(sprite, text) {
-            if (sprite.userData.text === text) return;
-            sharedCtx.clearRect(0, 0, 128, 128);
-            sharedCtx.fillStyle = 'rgba(15,23,42,0.85)';
-            sharedCtx.beginPath(); sharedCtx.arc(64, 64, 52, 0, Math.PI * 2); sharedCtx.fill();
-            sharedCtx.strokeStyle = '#e2e8f0'; sharedCtx.lineWidth = 4; sharedCtx.stroke();
-            sharedCtx.fillStyle = '#ffffff';
-            sharedCtx.font = 'bold 32px sans-serif';
-            sharedCtx.textAlign = 'center'; sharedCtx.textBaseline = 'middle';
-            sharedCtx.fillText(text, 64, 68);
+    // Draw a fixed brown beacon (created once, never moves).
+    function createBeacon(x, isMaster) {
+        const m = new THREE.Mesh(beaconGeo, isMaster ? beaconMasterMat : beaconMat);
+        m.position.set(x.sx, 2, x.sz);
+        scene.add(m);
+        return { mesh: m };
+    }
 
-            if(sprite.material.map) sprite.material.map.dispose();
-            sprite.material.map = new THREE.CanvasTexture(sharedCanvas);
-            sprite.material.needsUpdate = true;
-            sprite.userData.text = text;
-        }
-
-        // Factory for victim/rescuer markers. Stores a glide TARGET so the
-        // animation loop can move smoothly instead of teleporting each poll.
-        function create3DTarget(status, x, y, z, rankText) {
-            const mesh = new THREE.Mesh(sharedSphereGeo, materials[status]);
-            mesh.position.set(x, y, z);
-
-            const lineGeo = new THREE.BufferGeometry();
-            const positions = new Float32Array([0, -y, 0, 0, 0, 0]);
-            lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const line = new THREE.Line(lineGeo, lineMaterials[status]);
-            mesh.add(line);
-
-            let ring = null;
-            if (y < -0.5) {
-                ring = new THREE.Mesh(sharedRingGeo, ringMaterials[status]);
-                ring.rotation.x = -Math.PI / 2;
-                ring.position.y = -y; 
-                mesh.add(ring);
+    // --- TERRAIN: translucent gray rubble surface from the drone heightmap ---
+    let terrainMesh = null;
+    let terrainVisible = false;
+    function buildTerrain(terrain) {
+        if (terrainMesh) return;                  // build once
+        const n = terrain.grid;
+        const geo = new THREE.PlaneGeometry(SITE, SITE, n - 1, n - 1);
+        const pos = geo.attributes.position;
+        // PlaneGeometry vertices go row by row; set Z (height) per cell, then
+        // we rotate the plane flat so Z becomes world-up (Y).
+        for (let j = 0; j < n; j++) {
+            for (let i = 0; i < n; i++) {
+                const idx = j * n + i;
+                pos.setZ(idx, terrain.cells[j][i] * DEPTH_VIS);
             }
-
-            let label = null;
-            if (rankText != null) {
-                label = makeNumberSprite(rankText);
-                label.position.set(0, 3, 0);   // hover above the sphere
-                mesh.add(label);
-            }
-
-            scene.add(mesh);
-            return { mesh, line, ring, label,
-                     target: new THREE.Vector3(x, y, z),
-                     pulseTime: Math.random() * 100 };
         }
+        geo.computeVertexNormals();
+        const mat = new THREE.MeshBasicMaterial({
+            color: 0x9ca3af, transparent: true, opacity: 0.28,
+            side: THREE.DoubleSide, wireframe: false
+        });
+        terrainMesh = new THREE.Mesh(geo, mat);
+        terrainMesh.rotation.x = -Math.PI / 2;     // lay flat; height -> up
+        terrainMesh.visible = terrainVisible;
+        scene.add(terrainMesh);
 
-        // Draw a fixed brown beacon (created once, never moves).
-        function createBeacon(x, isMaster) {
-            const m = new THREE.Mesh(beaconGeo, isMaster ? beaconMasterMat : beaconMat);
-            m.position.set(x.sx, 2, x.sz);
-            scene.add(m);
-            return { mesh: m };
+        // a subtle wireframe overlay so the rubble shape reads clearly
+        const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+            color: 0xcbd5e1, wireframe: true, transparent: true, opacity: 0.15
+        }));
+        terrainMesh.add(wire);
+    }
+    function toggleTerrain() {
+        terrainVisible = !terrainVisible;
+        if (terrainMesh) terrainMesh.visible = terrainVisible;
+        const btn = document.getElementById('terrain-btn');
+        if (btn) {
+            btn.classList.toggle('bg-slate-600', terrainVisible);
+            btn.innerText = terrainVisible ? 'Hide Debris Terrain' : 'Show Debris Terrain';
         }
+    }
+    window.toggleTerrain = toggleTerrain;
 
-        // --- TERRAIN: translucent gray rubble surface from the drone heightmap ---
-        let terrainMesh = null;
-        let terrainVisible = false;
-        function buildTerrain(terrain) {
-            if (terrainMesh) return;                  // build once
-            const n = terrain.grid;
-            const geo = new THREE.PlaneGeometry(SITE, SITE, n - 1, n - 1);
-            const pos = geo.attributes.position;
-            // PlaneGeometry vertices go row by row; set Z (height) per cell, then
-            // we rotate the plane flat so Z becomes world-up (Y).
-            for (let j = 0; j < n; j++) {
-                for (let i = 0; i < n; i++) {
-                    const idx = j * n + i;
-                    pos.setZ(idx, terrain.cells[j][i] * DEPTH_VIS);
-                }
-            }
-            geo.computeVertexNormals();
-            const mat = new THREE.MeshBasicMaterial({
-                color: 0x9ca3af, transparent: true, opacity: 0.28,
-                side: THREE.DoubleSide, wireframe: false
-            });
-            terrainMesh = new THREE.Mesh(geo, mat);
-            terrainMesh.rotation.x = -Math.PI / 2;     // lay flat; height -> up
-            terrainMesh.visible = terrainVisible;
-            scene.add(terrainMesh);
+    // DOM Card Builders
+    function createDOMCard(victim, index) {
+        const color = getTailwindColorForStatus(victim.triage_status);
+        const shortId = victim.victim_id.split('-')[0].toUpperCase();
+        const rank = index + 1;
 
-            // a subtle wireframe overlay so the rubble shape reads clearly
-            const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-                color: 0xcbd5e1, wireframe: true, transparent: true, opacity: 0.15
-            }));
-            terrainMesh.add(wire);
-        }
-        function toggleTerrain() {
-            terrainVisible = !terrainVisible;
-            if (terrainMesh) terrainMesh.visible = terrainVisible;
-            const btn = document.getElementById('terrain-btn');
-            if (btn) {
-                btn.classList.toggle('bg-slate-600', terrainVisible);
-                btn.innerText = terrainVisible ? 'Hide Debris Terrain' : 'Show Debris Terrain';
-            }
-        }
-        window.toggleTerrain = toggleTerrain;
-
-        // DOM Card Builders
-        function createDOMCard(victim, index) {
-            const color = getTailwindColorForStatus(victim.triage_status);
-            const shortId = victim.victim_id.split('-')[0].toUpperCase();
-            const rank = index + 1;
-
-            // Show a "no signal" notice (only when the backend reports it).
-            let noSignalBanner = '';
-            if (victim.triage_status === 'NO_SIGNAL') {
-                const secs = (victim.metrics && victim.metrics.seconds_since_seen != null)
-                    ? `${victim.metrics.seconds_since_seen}s ago` : 'unknown';
-                noSignalBanner = `
+        // Show a "no signal" notice (only when the backend reports it).
+        let noSignalBanner = '';
+        if (victim.triage_status === 'NO_SIGNAL') {
+            const secs = (victim.metrics && victim.metrics.seconds_since_seen != null)
+                ? `${victim.metrics.seconds_since_seen}s ago` : 'unknown';
+            noSignalBanner = `
                     <div class="mb-3 ml-3 text-[10px] font-semibold text-slate-400 bg-slate-900/50 border border-slate-600/40 rounded-lg px-2.5 py-1.5 flex items-center gap-2">
                         <i class="fa-solid fa-link-slash text-slate-500"></i>
                         SIGNAL LOST — last seen ${secs} (showing last known position)
                     </div>`;
-            }
+        }
 
-            return `
+        return `
                 <div class="bg-slate-700/20 hover:bg-slate-700/40 transition-all duration-300 border border-white/5 rounded-xl p-4 relative overflow-hidden group shadow-lg backdrop-blur-sm ${victim.triage_status === 'NO_SIGNAL' ? 'opacity-60' : ''}" id="card-${victim.victim_id}">
                     <div class="absolute top-0 left-0 w-1.5 h-full bg-${color}-500/80 rounded-l-xl transition-all group-hover:bg-${color}-400"></div>
                     <div class="flex justify-between items-center mb-4 pl-3">
@@ -359,60 +371,88 @@ const ringMaterials = {
                             <span class="text-slate-200 font-mono font-medium text-sm">${victim.metrics.calculated_depth_meters}m</span>
                         </div>
                     </div>
-                    ${buildAssignRow(victim)}
                 </div>
             `;
-        }
-        // dropdown + button for the commander to assign a rescuer to this victim.
+    }
 
-        // dropdown + button for the commander to assign a rescuer to this victim.
-        function buildAssignRow(victim) {
+    // --- GLOBAL DISPATCH MODAL LOGIC ---
+    window.CURRENT_VICTIMS = [];
+    window.CURRENT_RESCUERS = [];
+
+    function toggleAssignModal() {
+        const modal = document.getElementById('dispatch-modal');
+        modal.classList.toggle('hidden');
+        if (!modal.classList.contains('hidden')) {
+            renderDispatchList();
+        }
+    }
+    window.toggleAssignModal = toggleAssignModal;
+
+    function renderDispatchList() {
+        const container = document.getElementById('dispatch-list');
+        if (!window.CURRENT_VICTIMS || window.CURRENT_VICTIMS.length === 0) {
+            container.innerHTML = '<div class="text-slate-500 text-sm flex h-full items-center justify-center">No telemetry data available for assignment.</div>';
+            return;
+        }
+
+        const rescuerOpts = window.CURRENT_RESCUERS.map(r => `<option value="${r.rescuer_id}">${r.rescuer_id}</option>`).join('');
+
+        container.innerHTML = window.CURRENT_VICTIMS.map(victim => {
             let statusBadge = '';
             const a = victim.assigned_to;
-
-            // Show the status if assigned, but do NOT hide the button below it
             if (a) {
                 statusBadge = a.confirmed
                     ? `<span class="text-emerald-400 block mb-2 text-[11px]"><i class="fa-solid fa-circle-check mr-1"></i>${a.rescuer_id} confirmed</span>`
-                    : `<span class="text-amber-400 block mb-2 text-[11px]"><i class="fa-solid fa-hourglass-half mr-1"></i>${a.rescuer_id} assigned (awaiting confirm)</span>`;
+                    : `<span class="text-amber-400 block mb-2 text-[11px]"><i class="fa-solid fa-hourglass-half mr-1"></i>${a.rescuer_id} assigned</span>`;
             }
 
-            const opts = LATEST_RESCUERS.map(r => `<option value="${r.rescuer_id}">${r.rescuer_id}</option>`).join('');
-
-            return `<div class="mt-3 ml-3 p-2 bg-slate-900/80 border border-sky-500/30 rounded-lg">
-                ${statusBadge}
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] text-sky-400 uppercase font-bold tracking-wider">Dispatch</span>
-                    <select id="sel-${victim.victim_id}" class="bg-slate-950 text-slate-200 text-[11px] rounded px-2 py-1.5 border border-white/10 flex-1">${opts}</select>
-                    <button onclick="assignVictim('${victim.victim_id}', document.getElementById('sel-${victim.victim_id}').value)"
-                        class="text-[11px] font-bold bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded transition-all shadow-[0_0_12px_rgba(2,132,199,0.6)]">
-                        SEND UNIT
-                    </button>
-                </div>
-            </div>`;
-        }
-
-        
-        let LATEST_RESCUERS = [];
-        async function assignVictim(victimId, rescuerId) {
-            if (!rescuerId) return;
-            try {
-                await fetch(API_URL.replace('/state', '/assign'), {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ rescuer_id: rescuerId, victim_id: victimId })
-                });
-                fetchLiveUWBData();   // refresh immediately so the card updates
-            } catch (e) { console.error('assign failed', e); }
-        }
-        window.assignVictim = assignVictim;
-
-        function createRescuerCard(rescuer) {
-            const isMoving = rescuer.status === "MOVING";
-            const pulseClass = isMoving ? "animate-pulse" : "";
-            const statusColor = isMoving ? "sky" : "slate";
-            const formattedId = rescuer.rescuer_id.replace('_', ' ');
-
             return `
+                    <div class="bg-slate-700/40 border border-slate-600/50 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <div class="text-slate-200 font-bold mb-1 tracking-wide">Victim ${victim.victim_id.split('-')[0].toUpperCase()}</div>
+                            <div class="text-[11px] font-semibold tracking-wider flex gap-3">
+                                <span class="bg-${getTailwindColorForStatus(victim.triage_status)}-500/10 text-${getTailwindColorForStatus(victim.triage_status)}-400 px-2 py-0.5 rounded border border-${getTailwindColorForStatus(victim.triage_status)}-500/20">${victim.triage_status}</span>
+                                <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-white/5">${victim.metrics.calculated_depth_meters}m depth</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/80 border border-sky-500/30 rounded-lg p-3 w-full sm:w-auto min-w-[250px]">
+                            ${statusBadge}
+                            <div class="flex items-center gap-2">
+                                <select id="modal-sel-${victim.victim_id}" class="bg-slate-950 text-slate-200 text-[11px] rounded px-2 py-2 border border-white/10 flex-1">
+                                    ${rescuerOpts}
+                                </select>
+                                <button onclick="assignVictim('${victim.victim_id}', document.getElementById('modal-sel-${victim.victim_id}').value); toggleAssignModal();"
+                                    class="text-[11px] font-bold bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(2,132,199,0.6)]">
+                                    DISPATCH
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        }).join('');
+    }
+
+
+    let LATEST_RESCUERS = [];
+    async function assignVictim(victimId, rescuerId) {
+        if (!rescuerId) return;
+        try {
+            await fetch(API_URL.replace('/state', '/assign'), {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ rescuer_id: rescuerId, victim_id: victimId })
+            });
+            fetchLiveUWBData();   // refresh immediately so the card updates
+        } catch (e) { console.error('assign failed', e); }
+    }
+    window.assignVictim = assignVictim;
+
+    function createRescuerCard(rescuer) {
+        const isMoving = rescuer.status === "MOVING";
+        const pulseClass = isMoving ? "animate-pulse" : "";
+        const statusColor = isMoving ? "sky" : "slate";
+        const formattedId = rescuer.rescuer_id.replace('_', ' ');
+
+        return `
                 <div class="bg-slate-700/20 border border-white/5 rounded-xl p-4 relative overflow-hidden group hover:bg-slate-700/30 transition-all duration-300 shadow-lg backdrop-blur-sm">
                     <div class="absolute top-0 left-0 w-1.5 h-full bg-sky-500/80 rounded-l-xl"></div>
                     <div class="flex justify-between items-center pl-3">
@@ -426,156 +466,160 @@ const ringMaterials = {
                     </div>
                 </div>
             `;
-        }
+    }
 
-        // Backend API endpoint (the live triage server). Change the host here
-        // if the backend runs on another machine on the LAN.
-        const API_URL = 'http://localhost:8000/state';
+    // Backend API endpoint (the live triage server). Change the host here
+    // if the backend runs on another machine on the LAN.
+    const API_URL = 'http://localhost:8000/state';
 
-        // Core Data Fetching
-        async function fetchLiveUWBData() {
-            try {
-                const response = await fetch(API_URL + '?t=' + new Date().getTime());
-                if (!response.ok) throw new Error("Network response was not ok");
-                
-                const data = await response.json();
-                
-                document.getElementById('connection-status').classList.replace('bg-rose-500', 'bg-teal-400');
-                document.getElementById('connection-text').innerText = 'Live Sync';
-                document.getElementById('connection-text').classList.replace('text-rose-400', 'text-teal-300');
+    // Core Data Fetching
+    async function fetchLiveUWBData() {
+        try {
+            const response = await fetch(API_URL + '?t=' + new Date().getTime());
+            if (!response.ok) throw new Error("Network response was not ok");
 
-                // --- Fill rescuer list FIRST so assign dropdowns have options ---
-                LATEST_RESCUERS = data.rescuers || [];
+            const data = await response.json();
 
-                // --- 1. Process Victims Array ---
-                document.getElementById('trapped-count').innerText = `${data.victims.length} FOUND`;
-                let victimHtml = '';
-                const seenVictimIds = new Set();
+            document.getElementById('connection-status').classList.replace('bg-rose-500', 'bg-teal-400');
+            document.getElementById('connection-text').innerText = 'Live Sync';
+            document.getElementById('connection-text').classList.replace('text-rose-400', 'text-teal-300');
 
-                data.victims.forEach((victim, index) => {
-                    const vId = victim.victim_id;
-                    seenVictimIds.add(vId);
-                    victimHtml += createDOMCard(victim, index);
+            // --- Update global state for the Dispatch Modal ---
+            window.CURRENT_VICTIMS = data.victims || [];
+            window.CURRENT_RESCUERS = data.rescuers || [];
+            LATEST_RESCUERS = data.rescuers || [];
 
-                    const vx = mapXY(victim.location.x_coord);
-                    const vy = depthToY(victim.metrics.calculated_depth_meters);
-                    const vz = mapXY(victim.location.y_coord);
-                    const status = victim.triage_status;
-                    const rankText = String(index + 1);
+            // --- 1. Process Victims Array ---
+            document.getElementById('trapped-count').innerText = `${data.victims.length} FOUND`;
 
 
-                    if (!activeVictims[vId]) {
-                        activeVictims[vId] = create3DTarget(status, vx, vy, vz, rankText);
-                    } else {
-                        // Set a glide TARGET; the animation loop moves there smoothly.
-                        activeVictims[vId].target.set(vx, vy, vz);
-                        activeVictims[vId].mesh.material = materials[status];
-                        activeVictims[vId].line.material = lineMaterials[status];
-                        if (activeVictims[vId].ring) {
-                            activeVictims[vId].ring.material = ringMaterials[status];
-                        }
-                        if (activeVictims[vId].label) {
-                            setSpriteNumber(activeVictims[vId].label, rankText);
-                        }
+            let victimHtml = '';
+            const seenVictimIds = new Set();
+
+            data.victims.forEach((victim, index) => {
+                const vId = victim.victim_id;
+                seenVictimIds.add(vId);
+                victimHtml += createDOMCard(victim, index);
+
+                const vx = mapXY(victim.location.x_coord);
+                const vy = depthToY(victim.metrics.calculated_depth_meters);
+                const vz = mapXY(victim.location.y_coord);
+                const status = victim.triage_status;
+                const rankText = String(index + 1);
+
+
+                if (!activeVictims[vId]) {
+                    activeVictims[vId] = create3DTarget(status, vx, vy, vz, rankText);
+                } else {
+                    // Set a glide TARGET; the animation loop moves there smoothly.
+                    activeVictims[vId].target.set(vx, vy, vz);
+                    activeVictims[vId].mesh.material = materials[status];
+                    activeVictims[vId].line.material = lineMaterials[status];
+                    if (activeVictims[vId].ring) {
+                        activeVictims[vId].ring.material = ringMaterials[status];
                     }
-                });
-                document.getElementById('trapped-list').innerHTML = victimHtml || '<div class="text-slate-500 text-sm flex items-center justify-center col-span-full h-full font-light">No signals found. Waiting for targets...</div>';
-
-                Object.keys(activeVictims).forEach(vId => {
-                    if (!seenVictimIds.has(vId)) {
-                        scene.remove(activeVictims[vId].mesh);
-                        delete activeVictims[vId];
+                    if (activeVictims[vId].label) {
+                        setSpriteNumber(activeVictims[vId].label, rankText);
                     }
-                });
+                }
+            });
+            document.getElementById('trapped-list').innerHTML = victimHtml || '<div class="text-slate-500 text-sm flex items-center justify-center col-span-full h-full font-light">No signals found. Waiting for targets...</div>';
 
-                // --- 1b. Draw the fixed ground beacons (brown) once ---
-                (data.beacons || []).forEach(b => {
-                    if (!activeBeacons[b.beacon_id]) {
-                        activeBeacons[b.beacon_id] = createBeacon(
-                            { sx: mapXY(b.x), sz: mapXY(b.y) }, b.is_master);
-                    }
-                });
-
-                // Build the debris terrain once we have the heightmap.
-                if (data.terrain) buildTerrain(data.terrain);
-
-                // --- 2. Process Rescuers Array ---
-                document.getElementById('rescuer-count').innerText = `${data.rescuers.length} DEPLOYED`;
-                let rescuerHtml = '';
-                const seenRescuerIds = new Set();
-
-                data.rescuers.forEach(rescuer => {
-                    const rId = rescuer.rescuer_id;
-                    seenRescuerIds.add(rId);
-                    rescuerHtml += createRescuerCard(rescuer);
-
-                    const rx = mapXY(rescuer.x);
-                    const ry = 0; 
-                    const rz = mapXY(rescuer.y);
-
-                    if (!activeRescuers[rId]) {
-                        activeRescuers[rId] = create3DTarget('RESCUER', rx, ry, rz, null);
-                    } else {
-                        activeRescuers[rId].target.set(rx, ry, rz);
-                    }
-                });
-                document.getElementById('rescuer-list').innerHTML = rescuerHtml;
-
-                Object.keys(activeRescuers).forEach(rId => {
-                    if (!seenRescuerIds.has(rId)) {
-                        scene.remove(activeRescuers[rId].mesh);
-                        delete activeRescuers[rId];
-                    }
-                });
-
-            } catch (error) {
-                console.error("Failed to fetch live state from " + API_URL, error);
-                document.getElementById('connection-status').classList.replace('bg-teal-400', 'bg-rose-500');
-                document.getElementById('connection-text').innerText = 'Offline';
-                document.getElementById('connection-text').classList.replace('text-teal-300', 'text-rose-400');
-            }
-        }
-
-        setInterval(fetchLiveUWBData, 10000);   // refresh priority + positions every 10s
-        fetchLiveUWBData(); 
-
-        // --- 4. ANIMATION LOOP ---
-        // Glide each marker toward its target every frame (smooth, no jumping),
-        // with a gentle bob and a drop-line kept anchored to the ground.
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-
-            const time = Date.now() * 0.002; 
-
-            Object.values(activeVictims).forEach(t => {
-                // Ease X/Z toward the latest target.
-                t.mesh.position.x += (t.target.x - t.mesh.position.x) * 0.08;
-                t.mesh.position.z += (t.target.z - t.mesh.position.z) * 0.08;
-                // Ease Y toward target, then add a subtle bob on top.
-                const baseY = t.mesh.position.y + (t.target.y - t.mesh.position.y) * 0.08;
-                t.mesh.position.y = baseY;
-                // Keep the drop-line reaching the ground (local space).
-                const pos = t.line.geometry.getAttribute('position');
-                pos.setY(0, -t.mesh.position.y);
-                pos.needsUpdate = true;
+            Object.keys(activeVictims).forEach(vId => {
+                if (!seenVictimIds.has(vId)) {
+                    scene.remove(activeVictims[vId].mesh);
+                    delete activeVictims[vId];
+                }
             });
 
-            Object.values(activeRescuers).forEach(r => {
-                r.mesh.position.x += (r.target.x - r.mesh.position.x) * 0.08;
-                r.mesh.position.z += (r.target.z - r.mesh.position.z) * 0.08;
-                r.mesh.position.y = 6;
+            // --- 1b. Draw the fixed ground beacons (brown) once ---
+            (data.beacons || []).forEach(b => {
+                if (!activeBeacons[b.beacon_id]) {
+                    activeBeacons[b.beacon_id] = createBeacon(
+                        { sx: mapXY(b.x), sz: mapXY(b.y) }, b.is_master);
+                }
             });
 
-            renderer.render(scene, camera);
-        }
-        animate();
+            // Build the debris terrain once we have the heightmap.
+            if (data.terrain) buildTerrain(data.terrain);
 
-        window.addEventListener('resize', () => {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            // --- 2. Process Rescuers Array ---
+            document.getElementById('rescuer-count').innerText = `${data.rescuers.length} DEPLOYED`;
+            let rescuerHtml = '';
+            const seenRescuerIds = new Set();
+
+            data.rescuers.forEach(rescuer => {
+                const rId = rescuer.rescuer_id;
+                seenRescuerIds.add(rId);
+                rescuerHtml += createRescuerCard(rescuer);
+
+                const rx = mapXY(rescuer.x);
+                const ry = 0;
+                const rz = mapXY(rescuer.y);
+
+                if (!activeRescuers[rId]) {
+                    activeRescuers[rId] = create3DTarget('RESCUER', rx, ry, rz, null);
+                } else {
+                    activeRescuers[rId].target.set(rx, ry, rz);
+                }
+            });
+            document.getElementById('rescuer-list').innerHTML = rescuerHtml;
+
+            Object.keys(activeRescuers).forEach(rId => {
+                if (!seenRescuerIds.has(rId)) {
+                    scene.remove(activeRescuers[rId].mesh);
+                    delete activeRescuers[rId];
+                }
+            });
+
+        } catch (error) {
+            console.error("Failed to fetch live state from " + API_URL, error);
+            document.getElementById('connection-status').classList.replace('bg-teal-400', 'bg-rose-500');
+            document.getElementById('connection-text').innerText = 'Offline';
+            document.getElementById('connection-text').classList.replace('text-teal-300', 'text-rose-400');
+        }
+    }
+
+    setInterval(fetchLiveUWBData, 10000);   // refresh priority + positions every 10s
+    fetchLiveUWBData();
+
+    // --- 4. ANIMATION LOOP ---
+    // Glide each marker toward its target every frame (smooth, no jumping),
+    // with a gentle bob and a drop-line kept anchored to the ground.
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+
+        const time = Date.now() * 0.002;
+
+        Object.values(activeVictims).forEach(t => {
+            // Ease X/Z toward the latest target.
+            t.mesh.position.x += (t.target.x - t.mesh.position.x) * 0.08;
+            t.mesh.position.z += (t.target.z - t.mesh.position.z) * 0.08;
+            // Ease Y toward target, then add a subtle bob on top.
+            const baseY = t.mesh.position.y + (t.target.y - t.mesh.position.y) * 0.08;
+            t.mesh.position.y = baseY;
+            // Keep the drop-line reaching the ground (local space).
+            const pos = t.line.geometry.getAttribute('position');
+            pos.setY(0, -t.mesh.position.y);
+            pos.needsUpdate = true;
         });
-    </script>
+
+        Object.values(activeRescuers).forEach(r => {
+            r.mesh.position.x += (r.target.x - r.mesh.position.x) * 0.08;
+            r.mesh.position.z += (r.target.z - r.mesh.position.z) * 0.08;
+            r.mesh.position.y = 6;
+        });
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+</script>
 </body>
 </html>
